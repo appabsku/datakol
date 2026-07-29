@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembaca & Ekstraktor Multi-PDF Kolektibilitas</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- SheetJS (XLSX) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 font-sans p-3 md:p-6">
+
+    <div class="max-w-full mx-auto space-y-4">
+        
+        <!-- Header & Upload Container -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">📊 Ekstraktor Multi-PDF Kolektibilitas</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">Pilih dan unggah belasan file PDF sekaligus secara bersamaan.</p>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Tombol ini sudah mendukung pilih banyak file sekaligus (multiple) -->
+                    <label class="flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg shadow cursor-pointer transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        + Tambah Banyak PDF (Sekaligus)
+                        <input type="file" id="fileInput" accept="application/pdf" multiple class="hidden">
+                    </label>
+
+                    <button id="resetBtn" onclick="resetAllData()" class="hidden flex items-center justify-center px-3 py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-medium text-xs rounded-lg transition">
+                        Reset
+                    </button>
+
+                    <button id="exportXlsxBtn" onclick="exportToExcel()" class="hidden flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Download XLSX (3 Sheet)
+                    </button>
+
+                    <button id="exportCsvBtn" onclick="exportToCSV()" class="hidden flex items-center justify-center px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs rounded-lg shadow transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Download CSV
+                    </button>
+                </div>
+            </div>
+
+            <div id="fileListContainer" class="mt-3 text-xs hidden">
+                <span class="font-semibold text-slate-700">File Terbaca:</span>
+                <ul id="fileList" class="list-disc list-inside text-indigo-700 mt-1 space-y-0.5"></ul>
+            </div>
+        </div>
+
+        <!-- Tabel Hasil Ekstraksi -->
+        <div id="resultContainer" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="font-semibold text-xs text-slate-700 uppercase tracking-wider">Hasil Ekstraksi Data</h2>
+                    <span id="rowCount" class="text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-bold">0 Data</span>
+                </div>
+
+                <div class="flex items-center gap-4 text-xs font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                    <span class="text-slate-500">Mode Tampilan:</span>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="viewMode" value="all" onchange="toggleViewMode()" class="text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-1.5 text-slate-700">Semua Data</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="viewMode" value="filtered" checked onchange="toggleViewMode()" class="text-indigo-600 focus:ring-indigo-500">
+                        <span class="ml-1.5 text-indigo-700 font-bold">Gabungan Kol 2,3,4 (Sobirin 002, Wahyu 003, Edi 005)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[650px]">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 uppercase sticky top-0 border-b border-slate-200 shadow-sm">
+                        <tr>
+                            <th class="p-2.5 text-center bg-slate-100">No.</th>
+                            <th class="p-2.5 bg-slate-100">NOMOR</th>
+                            <th class="p-2.5 bg-slate-100">N a m a</th>
+                            <th class="p-2.5 bg-slate-100">Tg. Pinjam</th>
+                            <th class="p-2.5 bg-slate-100">Jtp. Angs.</th>
+                            <th class="p-2.5 text-right bg-slate-100">Plafond</th>
+                            <th class="p-2.5 text-right bg-slate-100">Saldo</th>
+                            <th class="p-2.5 text-center bg-slate-100">Kol</th>
+                            <th class="p-2.5 text-center bg-slate-200 text-slate-700 font-bold border-l border-slate-300">sudahbayar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="loading" class="hidden text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+            <p id="loadingStatus" class="mt-2 text-xs text-slate-600 font-medium">Memproses file PDF...</p>
+        </div>
+
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let parsedData = [];
+        let loadedFiles = [];
+        let activeViewData = [];
+
+        document.getElementById('fileInput').addEventListener('change', handleFiles);
+
+        function cleanToNumber(str) {
+            if (!str) return 0;
+            let cleanStr = str.split(',')[0].replace(/\./g, '').trim();
+            let num = parseInt(cleanStr, 10);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function formatNumber(num) {
+            if (num === 0 || num === "-" || !num) return "-";
+            return num.toLocaleString('id-ID');
+        }
+
+        function formatNumberForExport(num) {
+            if (num === 0 || num === "-" || !num) return "0";
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        async function handleFiles(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            showLoading(true, `Membaca ${files.length} file PDF sekaligus...`);
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (loadedFiles.includes(file.name)) continue;
+                
+                showLoading(true, `Membaca (${i + 1}/${files.length}): ${file.name}`);
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+                    let fullTextLines = [];
+
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        const linesMap = {};
+                        textContent.items.forEach(item => {
+                            const yRaw = item.transform[5];
+                            let foundY = Object.keys(linesMap).find(y => Math.abs(y - yRaw) < 3.5);
+                            if (!foundY) {
+                                foundY = yRaw;
+                                linesMap[foundY] = [];
+                            }
+                            linesMap[foundY].push({ x: item.transform[4], text: item.str });
+                        });
+
+                        const sortedY = Object.keys(linesMap).sort((a, b) => b - a);
+                        
+                        sortedY.forEach(y => {
+                            const lineItems = linesMap[y].sort((a, b) => a.x - b.x);
+                            const lineString = lineItems.map(item => item.text).join(" ").replace(/\s+/g, ' ').trim();
+                            if (lineString) fullTextLines.push(lineString);
+                        });
+                    }
+
+                    parsePDFLines(fullTextLines);
+                    loadedFiles.push(file.name);
+                } catch (err) {
+                    console.error(`Gagal membaca ${file.name}:`, err);
+                }
+            }
+
+            e.target.value = '';
+            showLoading(false);
+            updateFileListUI();
+            toggleViewMode();
+        }
+
+        function cleanNama(rawString) {
+            if (!rawString) return "NASABAH";
+            let text = rawString.replace(/^[\d\s\.-]+/, '').trim();
+
+            const addressKeywords = [
+                "\\bRT\\.?\\b", "\\bRW\\.?\\b", "\\bRT\\d+", "\\bRW\\d+", 
+                "\\bDK\\.?\\b", "\\bDKH\\.?\\b", "\\bDSN\\.?\\b", "\\bDS\\.?\\b", 
+                "\\bDUKUH\\b", "\\bDUKUHAN\\b", "\\bDUSUN\\b", "\\bDESA\\b", 
+                "\\bKEL\\.?\\b", "\\bKELURAHAN\\b", "\\bKEC\\.?\\b", "\\bKECAMATAN\\b", 
+                "\\bJL\\.?\\b", "\\bJLN\\.?\\b", "\\bJALAN\\b", "\\bGANG\\b", "\\bGG\\.?\\b", 
+                "\\bKP\\.?\\b", "\\bKAMPUNG\\b", "\\bBLOK\\b", "\\bNO\\.?\\b",
+                "\\b\\d{1,3}\\/\\d{1,3}\\b",
+
+                "\\bTLOGOTUWUNG\\b", "\\bGEJEG\\b", "\\bJOMBLANG\\b", "\\bKEDUNGBANTENG\\b", 
+                "\\bGUWARAN\\b", "\\bBEKUTUK\\b", "\\bTEMULUS\\b", "\\bSELOGENDER\\b", 
+                "\\bKARANGTENGAH\\b", "\\bSAMBONGMACAN\\b", "\\bRANDUBLATUNG\\b", 
+                "\\bNGADIROJO\\b", "\\bJAGONG\\b", "\\bSAMBONGWANGAN\\b", "\\bNGLIRON\\b", 
+                "\\bTANJUNG\\b", "\\bKDUNGTALANG\\b", "\\bPLOSO\\b", "\\bWULUNG\\b", 
+                "\\bBUNGAS\\b", "\\bSULURSA\\b", "\\bKARANG\\b", "\\bKEPOH\\b", 
+                "\\bBULAKAN\\b", "\\bBERAN\\b", "\\bDOPLANG\\b", "\\bKEDIREN\\b", 
+                "\\bPUNTUK\\b", "\\bPILANG\\b", "\\bBALONGKARE\\b", "\\bSUKOREJO\\b", 
+                "\\bGEMBYUNGAN\\b", "\\bKAYEN\\b", "\\bKEDUNGTUBAN\\b", "\\bPULO\\b", 
+                "\\bHUTABARA\\b", "\\bFABRUR\\b"
+            ];
+
+            const regexPattern = new RegExp(addressKeywords.join("|"), "i");
+            const matchIndex = text.search(regexPattern);
+
+            if (matchIndex !== -1) {
+                text = text.substring(0, matchIndex).trim();
+            }
+
+            text = text.replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
+            return text || "NASABAH";
+        }
+
+        function parsePDFLines(lines) {
+            let pendingNasabah = [];
+
+            lines.forEach(line => {
+                if (line.includes(":") || line.match(/^\d{2}-\d{4}/)) return; 
+
+                const subtotalMatch = line.match(/^\d+\s+(\d{2,3})\s+([A-Z\s\.]+)\s+([\d\.,]+)\s+([\d\.,]+)/);
+                const rekMatch = line.match(/\b(\d{2}-\d{4,5})\b/);
+
+                if (subtotalMatch) {
+                    const rawCode = subtotalMatch[1];
+                    const currentMktCode = rawCode.padStart(3, '0');
+                    const currentMktNama = cleanNama(subtotalMatch[2]);
+
+                    pendingNasabah.forEach(nasabah => {
+                        nasabah.mktCode = currentMktCode;
+                    });
+                    
+                    pendingNasabah = [];
+
+                    parsedData.push({
+                        noRek: currentMktCode,
+                        mktCode: currentMktCode,
+                        nama: `${currentMktCode} ${currentMktNama}`,
+                        tgPinjam: "-",
+                        jtpAngs: "-",
+                        plafond: cleanToNumber(subtotalMatch[3]),
+                        saldo: cleanToNumber(subtotalMatch[4]),
+                        kol: "-",
+                        sudahbayar: "",
+                        isSubtotal: true
+                    });
+
+                } else if (rekMatch) {
+                    const noRek = rekMatch[1];
+
+                    const dateMatches = line.match(/\b\d{2}-\d{2}-\d{4}\b/g);
+                    let tgPinjam = "-";
+                    let jtpAngs = "-";
+                    if (dateMatches && dateMatches.length >= 2) {
+                        tgPinjam = dateMatches[0];
+                        jtpAngs = dateMatches[1];
+                    }
+
+                    const numberMatches = line.match(/\b\d{1,3}(\.\d{3})*,\d{2}\b/g);
+                    let plafondNum = 0;
+                    let saldoNum = 0;
+
+                    if (numberMatches && numberMatches.length >= 2) {
+                        plafondNum = cleanToNumber(numberMatches[0]);
+                        saldoNum = cleanToNumber(numberMatches[1]);
+                    }
+
+                    let kol = "4"; 
+                    const kolMatch = line.match(/\b(\d{1}\s+hari)\s+(\d{1})\b/i) || line.match(/\b(hari)\s+(\d{1})\b/i);
+                    if (kolMatch) {
+                        kol = kolMatch[2];
+                    } else {
+                        const singleKolMatch = line.match(/\s+([1-5])\s*$/) || line.match(/\s+([1-5])\s+/);
+                        if (singleKolMatch) kol = singleKolMatch[1];
+                    }
+
+                    let afterRek = line.substring(line.indexOf(noRek) + noRek.length).trim();
+                    if (dateMatches && dateMatches.length > 0) {
+                        afterRek = afterRek.split(dateMatches[0])[0].trim();
+                    }
+
+                    const namaClean = cleanNama(afterRek);
+
+                    const nasabahRow = {
+                        noRek: noRek,
+                        mktCode: "999", 
+                        nama: namaClean,
+                        tgPinjam: tgPinjam,
+                        jtpAngs: jtpAngs,
+                        plafond: plafondNum,
+                        saldo: saldoNum,
+                        kol: String(kol).trim(),
+                        sudahbayar: "",
+                        isSubtotal: false
+                    };
+
+                    parsedData.push(nasabahRow);
+                    pendingNasabah.push(nasabahRow);
+                }
+            });
+        }
+
+        function getFilteredMarketingData() {
+            const allowedMarketing = ["002", "003", "005"];
+            const allowedKol = ["2", "3", "4"];
+
+            const filteredRows = parsedData.filter(row => {
+                if (row.isSubtotal) return false;
+                const isMktMatch = allowedMarketing.includes(row.mktCode);
+                const isKolMatch = allowedKol.includes(String(row.kol)) || row.kol === "-";
+                return isMktMatch && isKolMatch;
+            });
+
+            let processedResult = [];
+
+            allowedMarketing.forEach(mkt => {
+                const groupRows = filteredRows.filter(r => r.mktCode === mkt);
+                
+                if (groupRows.length > 0) {
+                    processedResult = processedResult.concat(groupRows);
+                    const totalPlafond = groupRows.reduce((acc, curr) => acc + curr.plafond, 0);
+                    const totalSaldo = groupRows.reduce((acc, curr) => acc + curr.saldo, 0);
+                    const subInfo = parsedData.find(p => p.isSubtotal && p.mktCode === mkt);
+                    
+                    let namaMktDisplay = subInfo ? subInfo.nama : `${mkt} MARKETING`;
+
+                    processedResult.push({
+                        noRek: mkt,
+                        mktCode: mkt,
+                        nama: namaMktDisplay,
+                        tgPinjam: "-",
+                        jtpAngs: "-",
+                        plafond: totalPlafond,
+                        saldo: totalSaldo,
+                        kol: "-",
+                        sudahbayar: "",
+                        isSubtotal: true
+                    });
+                }
+            });
+
+            return processedResult;
+        }
+
+        function toggleViewMode() {
+            const modeElement = document.querySelector('input[name="viewMode"]:checked');
+            const mode = modeElement ? modeElement.value : 'filtered';
+            
+            if (mode === "filtered") {
+                activeViewData = getFilteredMarketingData();
+            } else {
+                activeViewData = parsedData;
+            }
+            renderTable(activeViewData);
+        }
+
+        function updateFileListUI() {
+            const container = document.getElementById('fileListContainer');
+            const ul = document.getElementById('fileList');
+            ul.innerHTML = '';
+
+            if (loadedFiles.length > 0) {
+                loadedFiles.forEach(f => {
+                    const li = document.createElement('li');
+                    li.innerText = f;
+                    ul.appendChild(li);
+                });
+                container.classList.remove('hidden');
+                document.getElementById('resetBtn').classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+                document.getElementById('resetBtn').classList.add('hidden');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            data.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                if (row.isSubtotal) {
+                    tr.className = 'bg-amber-100 font-bold border-t-2 border-b-2 border-amber-300 text-amber-950';
+                } else {
+                    tr.className = idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50 hover:bg-slate-100';
+                }
+
+                tr.innerHTML = `
+                    <td class="p-2.5 text-center font-medium ${row.isSubtotal ? 'text-amber-900' : 'text-slate-500'}">${idx + 1}</td>
+                    <td class="p-2.5 font-mono whitespace-nowrap">${row.noRek}</td>
+                    <td class="p-2.5 font-bold">${row.nama}</td>
+                    <td class="p-2.5 whitespace-nowrap ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.tgPinjam}</td>
+                    <td class="p-2.5 whitespace-nowrap ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.jtpAngs}</td>
+                    <td class="p-2.5 text-right font-mono">${formatNumber(row.plafond)}</td>
+                    <td class="p-2.5 text-right font-mono font-semibold">${formatNumber(row.saldo)}</td>
+                    <td class="p-2.5 text-center font-bold ${row.isSubtotal ? 'text-amber-900' : 'text-red-600'}">${row.kol}</td>
+                    <td class="p-2.5 text-center font-mono text-slate-400 bg-slate-100/50 border-l border-slate-200"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('rowCount').innerText = `${data.length} Baris Tampil`;
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('exportCsvBtn').classList.remove('hidden');
+            document.getElementById('exportXlsxBtn').classList.remove('hidden');
+        }
+
+        function resetAllData() {
+            parsedData = [];
+            loadedFiles = [];
+            activeViewData = [];
+            document.getElementById('fileInput').value = '';
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('exportCsvBtn').classList.add('hidden');
+            document.getElementById('exportXlsxBtn').classList.add('hidden');
+            updateFileListUI();
+        }
+
+        function exportToExcel() {
+            if (activeViewData.length === 0) return;
+
+            const dataSobirin = activeViewData.filter(row => row.mktCode === "002");
+            const dataWahyu = activeViewData.filter(row => row.mktCode === "003");
+            const dataEdi = activeViewData.filter(row => row.mktCode === "005");
+
+            const workbook = XLSX.utils.book_new();
+
+            const formatRowsForSheet = (rows) => {
+                return rows.map((row, idx) => ({
+                    "No.": idx + 1,
+                    "NOMOR": row.noRek,
+                    "N a m a": row.nama,
+                    "Tg. Pinjam": row.tgPinjam,
+                    "Jtp. Angs.": row.jtpAngs,
+                    "Plafond": formatNumberForExport(row.plafond),
+                    "Saldo": formatNumberForExport(row.saldo),
+                    "Kol": row.kol,
+                    "sudahbayar": ""
+                }));
+            };
+
+            if (dataSobirin.length > 0) {
+                const wsSobirin = XLSX.utils.json_to_sheet(formatRowsForSheet(dataSobirin));
+                XLSX.utils.book_append_sheet(workbook, wsSobirin, "SOBIRIN");
+            }
+
+            if (dataWahyu.length > 0) {
+                const wsWahyu = XLSX.utils.json_to_sheet(formatRowsForSheet(dataWahyu));
+                XLSX.utils.book_append_sheet(workbook, wsWahyu, "WAHYU");
+            }
+
+            if (dataEdi.length > 0) {
+                const wsEdi = XLSX.utils.json_to_sheet(formatRowsForSheet(dataEdi));
+                XLSX.utils.book_append_sheet(workbook, wsEdi, "EDI");
+            }
+
+            const filename = `Data_Kolektibilitas_Marketing_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(workbook, filename);
+        }
+
+        function exportToCSV() {
+            if (activeViewData.length === 0) return;
+
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "No.;NOMOR;N a m a;Tg. Pinjam;Jtp. Angs.;Plafond;Saldo;Kol;sudahbayar\n";
+
+            activeViewData.forEach((row, idx) => {
+                const line = [
+                    idx + 1,
+                    `"${row.noRek}"`,
+                    `"${row.nama}"`,
+                    `"${row.tgPinjam}"`,
+                    `"${row.jtpAngs}"`,
+                    `"${formatNumberForExport(row.plafond)}"`,
+                    `"${formatNumberForExport(row.saldo)}"`,
+                    `"${row.kol}"`,
+                    `""`
+                ].join(";");
+                csvContent += line + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Data_Kolektibilitas_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showLoading(isLoading, message = "Memproses...") {
+            document.getElementById('loading').classList.toggle('hidden', !isLoading);
+            document.getElementById('loadingStatus').innerText = message;
+        }
+    </script>
+</body>
+</html>
