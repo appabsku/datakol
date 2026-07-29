@@ -24,7 +24,6 @@
                 </div>
                 
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Tombol ini sudah mendukung pilih banyak file sekaligus (multiple) -->
                     <label class="flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg shadow cursor-pointer transition">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         + Tambah Banyak PDF (Sekaligus)
@@ -121,11 +120,6 @@
         function formatNumber(num) {
             if (num === 0 || num === "-" || !num) return "-";
             return num.toLocaleString('id-ID');
-        }
-
-        function formatNumberForExport(num) {
-            if (num === 0 || num === "-" || !num) return "0";
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
         async function handleFiles(e) {
@@ -432,31 +426,54 @@
             const workbook = XLSX.utils.book_new();
 
             const formatRowsForSheet = (rows) => {
-                return rows.map((row, idx) => ({
-                    "No.": idx + 1,
-                    "NOMOR": row.noRek,
-                    "N a m a": row.nama,
-                    "Tg. Pinjam": row.tgPinjam,
-                    "Jtp. Angs.": row.jtpAngs,
-                    "Plafond": formatNumberForExport(row.plafond),
-                    "Saldo": formatNumberForExport(row.saldo),
-                    "Kol": row.kol,
-                    "sudahbayar": ""
-                }));
+                return rows.map((row, idx) => {
+                    return {
+                        "No.": idx + 1,
+                        "NOMOR": row.noRek,
+                        "N a m a": row.nama,
+                        "Tg. Pinjam": row.tgPinjam,
+                        "Jtp. Angs.": row.jtpAngs,
+                        "Plafond": row.isSubtotal ? row.plafond : Number(row.plafond),
+                        "Saldo": row.isSubtotal ? row.saldo : Number(row.saldo),
+                        "Kol": row.kol,
+                        "sudahbayar": ""
+                    };
+                });
             };
 
             if (dataSobirin.length > 0) {
                 const wsSobirin = XLSX.utils.json_to_sheet(formatRowsForSheet(dataSobirin));
+                const range = XLSX.utils.decode_range(wsSobirin['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    const cellPlafond = wsSobirin[XLSX.utils.encode_cell({c: 5, r: R})];
+                    const cellSaldo = wsSobirin[XLSX.utils.encode_cell({c: 6, r: R})];
+                    if (cellPlafond) { cellPlafond.z = '#,##0'; cellPlafond.t = 'n'; }
+                    if (cellSaldo) { cellSaldo.z = '#,##0'; cellSaldo.t = 'n'; }
+                }
                 XLSX.utils.book_append_sheet(workbook, wsSobirin, "SOBIRIN");
             }
 
             if (dataWahyu.length > 0) {
                 const wsWahyu = XLSX.utils.json_to_sheet(formatRowsForSheet(dataWahyu));
+                const range = XLSX.utils.decode_range(wsWahyu['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    const cellPlafond = wsWahyu[XLSX.utils.encode_cell({c: 5, r: R})];
+                    const cellSaldo = wsWahyu[XLSX.utils.encode_cell({c: 6, r: R})];
+                    if (cellPlafond) { cellPlafond.z = '#,##0'; cellPlafond.t = 'n'; }
+                    if (cellSaldo) { cellSaldo.z = '#,##0'; cellSaldo.t = 'n'; }
+                }
                 XLSX.utils.book_append_sheet(workbook, wsWahyu, "WAHYU");
             }
 
             if (dataEdi.length > 0) {
                 const wsEdi = XLSX.utils.json_to_sheet(formatRowsForSheet(dataEdi));
+                const range = XLSX.utils.decode_range(wsEdi['!ref']);
+                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                    const cellPlafond = wsEdi[XLSX.utils.encode_cell({c: 5, r: R})];
+                    const cellSaldo = wsEdi[XLSX.utils.encode_cell({c: 6, r: R})];
+                    if (cellPlafond) { cellPlafond.z = '#,##0'; cellPlafond.t = 'n'; }
+                    if (cellSaldo) { cellSaldo.z = '#,##0'; cellSaldo.t = 'n'; }
+                }
                 XLSX.utils.book_append_sheet(workbook, wsEdi, "EDI");
             }
 
@@ -477,8 +494,8 @@
                     `"${row.nama}"`,
                     `"${row.tgPinjam}"`,
                     `"${row.jtpAngs}"`,
-                    `"${formatNumberForExport(row.plafond)}"`,
-                    `"${formatNumberForExport(row.saldo)}"`,
+                    row.plafond,
+                    row.saldo,
                     `"${row.kol}"`,
                     `""`
                 ].join(";");
