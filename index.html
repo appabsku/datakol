@@ -144,6 +144,23 @@
         ::-webkit-scrollbar{ height:8px; width:8px; }
         ::-webkit-scrollbar-thumb{ background: var(--mdr-navy-700); border-radius: 999px; }
         ::-webkit-scrollbar-track{ background: var(--mdr-blue-100); }
+
+        .top-menu{
+            display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+            position:relative; margin-bottom:14px;
+        }
+        .top-menu a{
+            display:inline-flex; align-items:center; gap:6px;
+            background:rgba(255,255,255,.12);
+            border:1px solid rgba(255,255,255,.35);
+            color:#fff; text-decoration:none;
+            padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600;
+            transition:.15s background,.15s transform;
+        }
+        .top-menu a:hover{ background:rgba(255,255,255,.22); transform:translateY(-1px); }
+        .top-menu a.aktif{
+            background: var(--mdr-gold-500); color: var(--mdr-navy-900); border-color: var(--mdr-gold-500);
+        }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 p-3 md:p-6">
@@ -152,6 +169,11 @@
 
         <!-- Header & Upload Container -->
         <div class="livin-header p-5 rounded-2xl shadow-lg border border-white/10">
+            <nav class="top-menu">
+                <a href="https://appabsku.github.io/checker/">APK Checker</a>
+                <a href="https://appabsku.github.io/nisbahcek/">📊 ANALISA NISBAH</a>
+                <a href="#" class="aktif">📑 Ekstrak 234</a>
+            </nav>
             <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-2">
