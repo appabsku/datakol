@@ -562,18 +562,17 @@
             updateFileListUI();
         }
 
-        // --- SOLUSI 1 IMPLEMENTATION (EXCEL EXPORT FIX) ---
+        // --- SOLUSI TANPA POPUP MACRO / WARNING ---
         function exportToExcel() {
             if (activeViewData.length === 0) return;
 
-            // 1. FILTERING DATA: Mengabaikan baris subtotal (isSubtotal === true)
+            // 1. Mencegah baris rekap/subtotal ikut terunduh
             const dataSobirin = activeViewData.filter(row => row.mktCode === "002" && !row.isSubtotal);
             const dataWahyu = activeViewData.filter(row => row.mktCode === "003" && !row.isSubtotal);
             const dataEdi = activeViewData.filter(row => row.mktCode === "005" && !row.isSubtotal);
 
             const workbook = XLSX.utils.book_new();
 
-            // Function helper untuk merubah array JS menjadi format objek Excel
             const formatRowsForSheet = (rows) => {
                 return rows.map((row, idx) => {
                     return {
@@ -589,58 +588,53 @@
                 });
             };
 
-            // Function helper untuk Auto-Fit Lebar Kolom dan Format Angka Currency
-            const buildWorksheetWithAutoWidth = (rowsData) => {
+            const buildWorksheetClean = (rowsData) => {
                 const formatted = formatRowsForSheet(rowsData);
                 const worksheet = XLSX.utils.json_to_sheet(formatted);
 
-                // Format Tipe Data & Masking Angka Saldo (#,##0)
+                // Hilangkan cell.z = '#,##0' agar tidak menimbulkan peringatan Macro/Security Warning.
+                // Mengatur tipe sel numerik murni agar aman dibaca Excel tanpa dianggap membawa skrip.
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
                     const cellSaldo = worksheet[XLSX.utils.encode_cell({c: 5, r: R})];
                     if (cellSaldo) { 
-                        cellSaldo.z = '#,##0'; 
                         cellSaldo.t = 'n'; 
                     }
                 }
 
-                // AUTO-FIT COLUMN WIDTH CALCULATOR (Mencegah ######## & teks terpotong)
+                // Perhitungan Auto-Fit Lebar Kolom Murni
                 const colWidths = [];
                 const headers = ["No.", "Nomor", "N a m a", "Alamat", "Jtp Angsuran", "Saldo", "Kol", "sudahbayar"];
                 
-                headers.forEach((header, colIndex) => {
+                headers.forEach((header) => {
                     let maxLen = header.length;
                     formatted.forEach(row => {
                         const val = row[header];
-                        let strVal = "";
+                        let strVal = val !== null && val !== undefined ? String(val) : "";
                         if (header === "Saldo" && typeof val === "number") {
-                            strVal = val.toLocaleString('id-ID'); // perkiraan lebar saldo berformat
-                        } else {
-                            strVal = val !== null && val !== undefined ? String(val) : "";
+                            strVal = val.toLocaleString('id-ID'); 
                         }
                         if (strVal.length > maxLen) maxLen = strVal.length;
                     });
-                    // Tambahkan margin padding (+4) agar isi sel lega
-                    colWidths.push({ wch: maxLen + 4 });
+                    colWidths.push({ wch: maxLen + 5 });
                 });
 
                 worksheet['!cols'] = colWidths;
                 return worksheet;
             };
 
-            // Appending Sheet jika data tersedia
             if (dataSobirin.length > 0) {
-                const wsSobirin = buildWorksheetWithAutoWidth(dataSobirin);
+                const wsSobirin = buildWorksheetClean(dataSobirin);
                 XLSX.utils.book_append_sheet(workbook, wsSobirin, "SOBIRIN");
             }
 
             if (dataWahyu.length > 0) {
-                const wsWahyu = buildWorksheetWithAutoWidth(dataWahyu);
+                const wsWahyu = buildWorksheetClean(dataWahyu);
                 XLSX.utils.book_append_sheet(workbook, wsWahyu, "WAHYU");
             }
 
             if (dataEdi.length > 0) {
-                const wsEdi = buildWorksheetWithAutoWidth(dataEdi);
+                const wsEdi = buildWorksheetClean(dataEdi);
                 XLSX.utils.book_append_sheet(workbook, wsEdi, "EDI");
             }
 
@@ -651,7 +645,6 @@
         function exportToCSV() {
             if (activeViewData.length === 0) return;
 
-            // Filter out subtotal rows for CSV as well
             const cleanRows = activeViewData.filter(row => !row.isSubtotal);
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
