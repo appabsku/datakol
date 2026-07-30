@@ -171,8 +171,8 @@
         <div class="livin-header p-5 rounded-2xl shadow-lg border border-white/10">
             <nav class="top-menu">
                 <a href="https://appabsku.github.io/checker/">APK Checker</a>
-                <a href="https://appabsku.github.io/nisbahcek/">📊 ANALISA NISBAH</a>
-                <a href="#" class="aktif">📑 Ekstrak 234</a>
+                <a href="https://appabsku.github.io/nisbah/">📊 ANALISA NISBAH</a>
+                <a href="https://appabsku.github.io/datakol/" class="aktif">📑 Ekstrak 234</a>
             </nav>
             <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -588,7 +588,6 @@
         function exportToExcel() {
             if (activeViewData.length === 0) return;
 
-            // 1. Mencegah baris rekap/subtotal ikut terunduh
             const dataSobirin = activeViewData.filter(row => row.mktCode === "002" && !row.isSubtotal);
             const dataWahyu = activeViewData.filter(row => row.mktCode === "003" && !row.isSubtotal);
             const dataEdi = activeViewData.filter(row => row.mktCode === "005" && !row.isSubtotal);
@@ -614,8 +613,6 @@
                 const formatted = formatRowsForSheet(rowsData);
                 const worksheet = XLSX.utils.json_to_sheet(formatted);
 
-                // Hilangkan cell.z = '#,##0' agar tidak menimbulkan peringatan Macro/Security Warning.
-                // Mengatur tipe sel numerik murni agar aman dibaca Excel tanpa dianggap membawa skrip.
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
                     const cellSaldo = worksheet[XLSX.utils.encode_cell({c: 5, r: R})];
@@ -624,7 +621,6 @@
                     }
                 }
 
-                // Perhitungan Auto-Fit Lebar Kolom Murni
                 const colWidths = [];
                 const headers = ["No.", "Nomor", "N a m a", "Alamat", "Jtp Angsuran", "Saldo", "Kol", "sudahbayar"];
                 
