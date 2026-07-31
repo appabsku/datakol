@@ -38,19 +38,9 @@
             overflow: hidden;
         }
         .livin-header::after{
-            content:"";
-            position:absolute;
-            right:-60px; top:-80px;
+            content:""; position:absolute; right:-60px; top:-80px;
             width:220px; height:220px;
             background: radial-gradient(circle, rgba(255,198,41,0.35) 0%, transparent 70%);
-            border-radius:50%;
-        }
-        .livin-header::before{
-            content:"";
-            position:absolute;
-            left:20%; bottom:-100px;
-            width:180px; height:180px;
-            background: radial-gradient(circle, rgba(0,103,184,0.45) 0%, transparent 70%);
             border-radius:50%;
         }
         .btn-gold{
@@ -64,26 +54,24 @@
         }
         .btn-navy:hover{ filter: brightness(1.1); }
         .btn-outline-navy{
-            background: white;
-            color: var(--mdr-navy-800);
+            background: white; color: var(--mdr-navy-800);
             border: 1.5px solid var(--mdr-navy-800);
         }
         .btn-outline-navy:hover{ background: var(--mdr-blue-100); }
-        .btn-danger-soft{
-            background:#FDEDED;
-            color:#B3261E;
-        }
+        .btn-danger-soft{ background:#FDEDED; color:#B3261E; }
         .btn-danger-soft:hover{ background:#FADBD9; }
 
         table thead th{
             background: linear-gradient(180deg, var(--mdr-navy-800), var(--mdr-navy-900));
-            color: #F5F8FC;
-            font-weight: 700;
-            letter-spacing: 0.02em;
+            color: #F5F8FC; font-weight: 700; letter-spacing: 0.02em;
         }
         table thead th.col-sudahbayar{
             background: linear-gradient(180deg, var(--mdr-gold-500), var(--mdr-gold-600));
             color: var(--mdr-navy-900);
+        }
+        table thead th.col-basil{
+            background: linear-gradient(180deg, #00A651, #007A3B);
+            color: white;
         }
         tbody tr.row-even{ background: #ffffff; }
         tbody tr.row-odd{ background: var(--mdr-blue-100); }
@@ -108,39 +96,24 @@
         .kol-dash{ background:#B9C4D0; color:#334; }
 
         .filter-segment{
-            background: var(--mdr-navy-900);
-            border-radius: 999px;
-            padding: 4px;
-            display:inline-flex;
-            gap: 2px;
+            background: var(--mdr-navy-900); border-radius: 999px; padding: 4px;
+            display:inline-flex; gap: 2px;
         }
-        .filter-segment label{
-            position: relative;
-            cursor: pointer;
-        }
+        .filter-segment label{ position: relative; cursor: pointer; }
         .filter-segment input{ position:absolute; opacity:0; pointer-events:none; }
         .filter-segment span{
-            display:inline-flex;
-            align-items:center;
-            padding: 7px 14px;
-            border-radius: 999px;
-            font-size: 11.5px;
-            font-weight: 600;
-            color: #C9D8EA;
-            transition: all .15s ease;
-            white-space: nowrap;
+            display:inline-flex; align-items:center; padding: 7px 14px;
+            border-radius: 999px; font-size: 11.5px; font-weight: 600;
+            color: #C9D8EA; transition: all .15s ease; white-space: nowrap;
         }
         .filter-segment input:checked + span{
-            background: var(--mdr-gold-500);
-            color: var(--mdr-navy-900);
+            background: var(--mdr-gold-500); color: var(--mdr-navy-900);
             box-shadow: 0 2px 6px rgba(0,0,0,0.25);
         }
-
         .stat-pill{
             background: linear-gradient(135deg, var(--mdr-navy-800), var(--mdr-blue-500));
             color: white;
         }
-
         ::-webkit-scrollbar{ height:8px; width:8px; }
         ::-webkit-scrollbar-thumb{ background: var(--mdr-navy-700); border-radius: 999px; }
         ::-webkit-scrollbar-track{ background: var(--mdr-blue-100); }
@@ -151,11 +124,9 @@
         }
         .top-menu a{
             display:inline-flex; align-items:center; gap:6px;
-            background:rgba(255,255,255,.12);
-            border:1px solid rgba(255,255,255,.35);
-            color:#fff; text-decoration:none;
-            padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600;
-            transition:.15s background,.15s transform;
+            background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35);
+            color:#fff; text-decoration:none; padding:8px 16px; border-radius:20px;
+            font-size:12.5px; font-weight:600; transition:.15s background,.15s transform;
         }
         .top-menu a:hover{ background:rgba(255,255,255,.22); transform:translateY(-1px); }
         .top-menu a.aktif{
@@ -165,7 +136,7 @@
 </head>
 <body class="min-h-screen text-slate-800 p-3 md:p-6">
 
-    <div class="max-w-5xl mx-auto space-y-4">
+    <div class="max-w-6xl mx-auto space-y-4">
 
         <!-- Header & Upload Container -->
         <div class="livin-header p-5 rounded-2xl shadow-lg border border-white/10">
@@ -180,27 +151,36 @@
                         <div class="w-8 h-8 rounded-lg btn-gold flex items-center justify-center font-black text-sm shadow">L</div>
                         <h1 class="text-xl font-bold text-white">Ekstraktor Multi-PDF Kolektibilitas</h1>
                     </div>
-                    <p class="text-xs text-blue-100/80 mt-1 ml-10">Pilih dan unggah belasan file PDF sekaligus secara bersamaan.</p>
+                    <p class="text-xs text-blue-100/80 mt-1 ml-10">Pilih PDF Kolektibilitas dan Upload CSV/URL Google Sheets Basil.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
                     <label class="flex items-center justify-center px-4 py-2.5 btn-gold font-bold text-xs rounded-full shadow-md cursor-pointer transition">
                         <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Tambah Banyak PDF
+                        + PDF Kol
                         <input type="file" id="fileInput" accept="application/pdf" multiple class="hidden">
                     </label>
+
+                    <label class="flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md cursor-pointer transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Upload CSV Basil
+                        <input type="file" id="csvFileInput" accept=".csv,.txt" class="hidden">
+                    </label>
+
+                    <button onclick="openUrlModal()" class="flex items-center justify-center px-4 py-2.5 btn-navy font-bold text-xs rounded-full shadow-md transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                        URL Sheets
+                    </button>
 
                     <button id="resetBtn" onclick="resetAllData()" class="hidden flex items-center justify-center px-3 py-2.5 btn-danger-soft font-semibold text-xs rounded-full transition">
                         Reset
                     </button>
 
                     <button id="exportXlsxBtn" onclick="exportToExcel()" class="hidden flex items-center justify-center px-4 py-2.5 btn-outline-navy font-semibold text-xs rounded-full shadow transition">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        Download XLSX (3 Sheet)
+                        Download XLSX
                     </button>
 
                     <button id="exportCsvBtn" onclick="exportToCSV()" class="hidden flex items-center justify-center px-4 py-2.5 btn-navy font-semibold text-xs rounded-full shadow transition">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Download CSV
                     </button>
                 </div>
@@ -227,7 +207,7 @@
                     </label>
                     <label>
                         <input type="radio" name="viewMode" value="filtered" checked onchange="toggleViewMode()">
-                        <span>Gabungan Kol 2,3,4 (Sobirin 002 &middot; Wahyu 003 &middot; Edi 005)</span>
+                        <span>Gabungan Kol 2,3,4 (Semua Marketing)</span>
                     </label>
                 </div>
             </div>
@@ -244,6 +224,7 @@
                             <th class="p-2.5 text-right">Saldo</th>
                             <th class="p-2.5 text-center">Kol</th>
                             <th class="p-2.5 text-center col-sudahbayar border-l border-amber-300">sudahbayar</th>
+                            <th class="p-2.5 text-center col-basil border-l border-emerald-400">basil</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
@@ -254,9 +235,22 @@
 
         <div id="loading" class="hidden text-center py-12">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[var(--mdr-navy-800)] border-t-[var(--mdr-gold-500)]"></div>
-            <p id="loadingStatus" class="mt-2 text-xs text-[var(--mdr-navy-800)] font-semibold">Memproses file PDF...</p>
+            <p id="loadingStatus" class="mt-2 text-xs text-[var(--mdr-navy-800)] font-semibold">Memproses file...</p>
         </div>
 
+    </div>
+
+    <!-- Modal Input URL Google Sheets -->
+    <div id="urlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <h3 class="font-bold text-base text-[var(--mdr-navy-900)]">Masukkan URL Google Sheets Basil</h3>
+            <p class="text-xs text-slate-500">Gunakan CorsProxy bawaan otomatis untuk mengambil link publikasi Google Sheets Anda.</p>
+            <input type="text" id="sheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-[var(--mdr-blue-500)] font-mono">
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeUrlModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-full text-xs font-semibold hover:bg-slate-300">Batal</button>
+                <button onclick="processSheetsUrl()" class="px-4 py-2 btn-gold rounded-full text-xs font-bold shadow">Proses URL</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -265,12 +259,14 @@
         let parsedData = [];
         let loadedFiles = [];
         let activeViewData = [];
+        let parsedBasilMap = [];
 
         document.getElementById('fileInput').addEventListener('change', handleFiles);
+        document.getElementById('csvFileInput').addEventListener('change', handleCSVFile);
 
         function cleanToNumber(str) {
             if (!str) return 0;
-            let cleanStr = str.split(',')[0].replace(/\./g, '').trim();
+            let cleanStr = String(str).split(',')[0].replace(/\./g, '').replace(/[^\d]/g, '').trim();
             let num = parseInt(cleanStr, 10);
             return isNaN(num) ? 0 : num;
         }
@@ -286,6 +282,135 @@
                 return `<span class="kol-badge kol-dash">${k}</span>`;
             }
             return `<span class="kol-badge kol-${k}">${k}</span>`;
+        }
+
+        function cleanName(name) {
+            if (!name) return "";
+            return name.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+        }
+
+        function openUrlModal() {
+            document.getElementById('urlModal').classList.remove('hidden');
+        }
+
+        function closeUrlModal() {
+            document.getElementById('urlModal').classList.add('hidden');
+        }
+
+        // BACA FILE CSV LOKAL DIRECT (TIDAK KENA BLOKIR BROWSER/CORS)
+        function handleCSVFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showLoading(true, "Membaca file CSV Basil...");
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const csvText = evt.target.result;
+                parseBasilCSV(csvText);
+                applyBasilMatching();
+
+                if (!loadedFiles.includes(file.name)) {
+                    loadedFiles.push(file.name);
+                }
+
+                updateFileListUI();
+                toggleViewMode();
+                showLoading(false);
+                alert("Berhasil mengimpor data Basil dari File CSV!");
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        async function processSheetsUrl() {
+            let urlInput = document.getElementById('sheetsUrlInput').value.trim();
+            if (!urlInput) {
+                alert("Masukkan URL Google Sheets terlebih dahulu!");
+                return;
+            }
+
+            let csvUrl = urlInput;
+            if (urlInput.includes('/pubhtml')) {
+                csvUrl = urlInput.replace(/\/pubhtml.*$/, '/pub?output=csv');
+            } else if (urlInput.includes('/edit')) {
+                csvUrl = urlInput.replace(/\/edit.*$/, '/export?format=csv');
+            } else if (!urlInput.includes('output=csv') && !urlInput.includes('format=csv')) {
+                if (urlInput.endsWith('/pub')) {
+                    csvUrl = urlInput + '?output=csv';
+                }
+            }
+
+            closeUrlModal();
+            showLoading(true, "Mengunduh & Memproses Data Basil...");
+
+            // Proxy cors-anywhere/allorigins multi-fallback
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(csvUrl)}`,
+                csvUrl
+            ];
+
+            let csvText = null;
+            for (let proxy of proxies) {
+                try {
+                    const response = await fetch(proxy);
+                    if (response.ok) {
+                        csvText = await response.text();
+                        break;
+                    }
+                } catch (e) {
+                    console.warn("Proxy gagal, mencoba opsi berikutnya...", e);
+                }
+            }
+
+            if (csvText) {
+                parseBasilCSV(csvText);
+                applyBasilMatching();
+
+                if (!loadedFiles.includes("Google Sheets Basil")) {
+                    loadedFiles.push("Google Sheets Basil");
+                }
+                
+                updateFileListUI();
+                toggleViewMode();
+                showLoading(false);
+                alert("Berhasil! Data Basil dari Google Sheets telah dicocokkan.");
+            } else {
+                showLoading(false);
+                alert("Gagal mengambil via online karena diblokir CORS Browser lokal.\n\nSaran: Gunakan tombol 'Upload CSV Basil' (Download dulu Google Sheets Anda ke CSV).");
+            }
+        }
+
+        function parseBasilCSV(csvText) {
+            const rows = csvText.split('\n');
+            rows.forEach(row => {
+                const cols = row.split(/,|\t/);
+                if (cols.length >= 2) {
+                    for (let i = 0; i < cols.length; i++) {
+                        let cell = cols[i].replace(/"/g, '').trim();
+                        let num = cleanToNumber(cell);
+                        if (num > 1000) {
+                            let nameCandidate = "";
+                            for (let j = 0; j < i; j++) {
+                                let potentialName = cols[j].replace(/"/g, '').trim();
+                                if (potentialName && !/^\d+$/.test(potentialName)) {
+                                    nameCandidate = potentialName;
+                                    break;
+                                }
+                            }
+                            if (nameCandidate) {
+                                parsedBasilMap.push({
+                                    nama: cleanName(nameCandidate),
+                                    saldo: 0,
+                                    basil: num
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         async function handleFiles(e) {
@@ -329,12 +454,24 @@
                         });
                     }
 
-                    parsePDFLines(fullTextLines);
+                    const isBasilPdf = file.name.toLowerCase().includes("cheker") || 
+                                       file.name.toLowerCase().includes("nisbah") || 
+                                       file.name.toLowerCase().includes("randu") ||
+                                       fullTextLines.some(l => l.includes("Pot. Basil") || l.includes("BASIL"));
+
+                    if (isBasilPdf) {
+                        parseBasilLines(fullTextLines);
+                    } else {
+                        parsePDFLines(fullTextLines);
+                    }
+
                     loadedFiles.push(file.name);
                 } catch (err) {
                     console.error(`Gagal membaca ${file.name}:`, err);
                 }
             }
+
+            applyBasilMatching();
 
             e.target.value = '';
             showLoading(false);
@@ -354,7 +491,6 @@
                 "\\bJL\\.?\\b", "\\bJLN\\.?\\b", "\\bJALAN\\b", "\\bGANG\\b", "\\bGG\\.?\\b",
                 "\\bKP\\.?\\b", "\\bKAMPUNG\\b", "\\bBLOK\\b", "\\bNO\\.?\\b",
                 "\\b\\d{1,3}\\/\\d{1,3}\\b",
-
                 "\\bTLOGOTUWUNG\\b", "\\bGEJEG\\b", "\\bJOMBLANG\\b", "\\bKEDUNGBANTENG\\b",
                 "\\bGUWARAN\\b", "\\bBEKUTUK\\b", "\\bTEMULUS\\b", "\\bSELOGENDER\\b",
                 "\\bKARANGTENGAH\\b", "\\bSAMBONGMACAN\\b", "\\bRANDUBLATUNG\\b",
@@ -383,6 +519,29 @@
                 nama: text.replace(/[\,\.\-\/\:\;\s]+$/, '').trim() || "NASABAH",
                 alamat: "-"
             };
+        }
+
+        function parseBasilLines(lines) {
+            lines.forEach(line => {
+                let cleanLine = line.replace(/\b\d{2}-\d{2}-\d{4}\b/g, '');
+                const formattedNumbers = cleanLine.match(/\b\d{1,3}(\.\d{3})+\b/g);
+
+                if (formattedNumbers && formattedNumbers.length >= 2) {
+                    let saldoVal = cleanToNumber(formattedNumbers[0]);
+                    let potBasilVal = cleanToNumber(formattedNumbers[1]);
+
+                    let textClean = cleanLine.replace(/\b\d{1,3}(\.\d{3})+\b/g, '')
+                                             .replace(/^\d+\s+/, '').trim();
+
+                    if (textClean && potBasilVal > 0) {
+                        parsedBasilMap.push({
+                            nama: cleanName(textClean),
+                            saldo: saldoVal,
+                            basil: potBasilVal
+                        });
+                    }
+                }
+            });
         }
 
         function parsePDFLines(lines) {
@@ -414,6 +573,7 @@
                         saldo: cleanToNumber(subtotalMatch[4]),
                         kol: "-",
                         sudahbayar: "",
+                        basil: "",
                         isSubtotal: true
                     });
 
@@ -462,6 +622,7 @@
                         saldo: saldoNum,
                         kol: String(kol).trim(),
                         sudahbayar: "",
+                        basil: "",
                         isSubtotal: false
                     };
 
@@ -471,20 +632,41 @@
             });
         }
 
+        function applyBasilMatching() {
+            if (parsedBasilMap.length === 0 || parsedData.length === 0) return;
+
+            parsedData.forEach(row => {
+                if (row.isSubtotal) return;
+
+                const rowNameClean = cleanName(row.nama);
+                const rowSaldo = row.saldo;
+
+                let matched = parsedBasilMap.find(b => {
+                    let isNameMatch = b.nama && rowNameClean && (rowNameClean.includes(b.nama) || b.nama.includes(rowNameClean));
+                    let isSaldoMatch = b.saldo > 0 && Math.abs(b.saldo - rowSaldo) < 1000;
+                    return isNameMatch || isSaldoMatch;
+                });
+
+                if (matched) {
+                    row.basil = matched.basil;
+                }
+            });
+        }
+
         function getFilteredMarketingData() {
-            const allowedMarketing = ["002", "003", "005"];
             const allowedKol = ["2", "3", "4"];
 
             const filteredRows = parsedData.filter(row => {
                 if (row.isSubtotal) return false;
-                const isMktMatch = allowedMarketing.includes(row.mktCode);
                 const isKolMatch = allowedKol.includes(String(row.kol)) || row.kol === "-";
-                return isMktMatch && isKolMatch;
+                return isKolMatch;
             });
+
+            const availableMktCodes = [...new Set(filteredRows.map(r => r.mktCode))].sort();
 
             let processedResult = [];
 
-            allowedMarketing.forEach(mkt => {
+            availableMktCodes.forEach(mkt => {
                 const groupRows = filteredRows.filter(r => r.mktCode === mkt);
 
                 if (groupRows.length > 0) {
@@ -503,6 +685,7 @@
                         saldo: totalSaldo,
                         kol: "-",
                         sudahbayar: "",
+                        basil: "",
                         isSubtotal: true
                     });
                 }
@@ -562,7 +745,8 @@
                     <td class="p-2.5 whitespace-nowrap ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.jtpAngs}</td>
                     <td class="p-2.5 text-right font-mono font-semibold text-[var(--mdr-navy-800)]">${formatNumber(row.saldo)}</td>
                     <td class="p-2.5 text-center">${kolBadge(row.kol)}</td>
-                    <td class="p-2.5 text-center font-mono text-slate-400 bg-amber-50/60 border-l border-amber-200"></td>
+                    <td class="p-2.5 text-center font-mono text-slate-400 bg-amber-50/60 border-l border-amber-200">${row.sudahbayar || ''}</td>
+                    <td class="p-2.5 text-right font-mono text-emerald-700 bg-emerald-50/60 border-l border-emerald-200 font-semibold">${row.basil ? formatNumber(row.basil) : ''}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -577,6 +761,7 @@
             parsedData = [];
             loadedFiles = [];
             activeViewData = [];
+            parsedBasilMap = [];
             document.getElementById('fileInput').value = '';
             document.getElementById('resultContainer').classList.add('hidden');
             document.getElementById('exportCsvBtn').classList.add('hidden');
@@ -584,13 +769,11 @@
             updateFileListUI();
         }
 
-        // --- SOLUSI TANPA POPUP MACRO / WARNING ---
         function exportToExcel() {
             if (activeViewData.length === 0) return;
 
-            const dataSobirin = activeViewData.filter(row => row.mktCode === "002" && !row.isSubtotal);
-            const dataWahyu = activeViewData.filter(row => row.mktCode === "003" && !row.isSubtotal);
-            const dataEdi = activeViewData.filter(row => row.mktCode === "005" && !row.isSubtotal);
+            const cleanRows = activeViewData.filter(row => !row.isSubtotal);
+            const availableMktCodes = [...new Set(cleanRows.map(row => row.mktCode))].sort();
 
             const workbook = XLSX.utils.book_new();
 
@@ -604,7 +787,8 @@
                         "Jtp Angsuran": row.jtpAngs,
                         "Saldo": Number(row.saldo),
                         "Kol": row.kol,
-                        "sudahbayar": ""
+                        "sudahbayar": row.sudahbayar || "",
+                        "basil": row.basil ? Number(row.basil) : ""
                     };
                 });
             };
@@ -616,21 +800,22 @@
                 const range = XLSX.utils.decode_range(worksheet['!ref']);
                 for (let R = range.s.r + 1; R <= range.e.r; ++R) {
                     const cellSaldo = worksheet[XLSX.utils.encode_cell({c: 5, r: R})];
-                    if (cellSaldo) { 
-                        cellSaldo.t = 'n'; 
-                    }
+                    if (cellSaldo) cellSaldo.t = 'n';
+
+                    const cellBasil = worksheet[XLSX.utils.encode_cell({c: 8, r: R})];
+                    if (cellBasil && cellBasil.v !== "") cellBasil.t = 'n';
                 }
 
                 const colWidths = [];
-                const headers = ["No.", "Nomor", "N a m a", "Alamat", "Jtp Angsuran", "Saldo", "Kol", "sudahbayar"];
-                
+                const headers = ["No.", "Nomor", "N a m a", "Alamat", "Jtp Angsuran", "Saldo", "Kol", "sudahbayar", "basil"];
+
                 headers.forEach((header) => {
                     let maxLen = header.length;
                     formatted.forEach(row => {
                         const val = row[header];
                         let strVal = val !== null && val !== undefined ? String(val) : "";
-                        if (header === "Saldo" && typeof val === "number") {
-                            strVal = val.toLocaleString('id-ID'); 
+                        if ((header === "Saldo" || header === "basil") && typeof val === "number") {
+                            strVal = val.toLocaleString('id-ID');
                         }
                         if (strVal.length > maxLen) maxLen = strVal.length;
                     });
@@ -641,19 +826,22 @@
                 return worksheet;
             };
 
-            if (dataSobirin.length > 0) {
-                const wsSobirin = buildWorksheetClean(dataSobirin);
-                XLSX.utils.book_append_sheet(workbook, wsSobirin, "SOBIRIN");
-            }
+            availableMktCodes.forEach(mktCode => {
+                const mktRows = cleanRows.filter(row => row.mktCode === mktCode);
+                if (mktRows.length > 0) {
+                    const subInfo = parsedData.find(p => p.isSubtotal && p.mktCode === mktCode);
+                    let sheetName = mktCode;
+                    if (subInfo && subInfo.nama) {
+                        sheetName = subInfo.nama.replace(/[\\/\?\*\[\]]/g, '').substring(0, 30).trim();
+                    }
+                    const ws = buildWorksheetClean(mktRows);
+                    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
+                }
+            });
 
-            if (dataWahyu.length > 0) {
-                const wsWahyu = buildWorksheetClean(dataWahyu);
-                XLSX.utils.book_append_sheet(workbook, wsWahyu, "WAHYU");
-            }
-
-            if (dataEdi.length > 0) {
-                const wsEdi = buildWorksheetClean(dataEdi);
-                XLSX.utils.book_append_sheet(workbook, wsEdi, "EDI");
+            if (availableMktCodes.length === 0 && cleanRows.length > 0) {
+                const ws = buildWorksheetClean(cleanRows);
+                XLSX.utils.book_append_sheet(workbook, ws, "DATA KOLEKTIBILITAS");
             }
 
             const filename = `Data_Kolektibilitas_Marketing_${new Date().toISOString().slice(0,10)}.xlsx`;
@@ -666,7 +854,7 @@
             const cleanRows = activeViewData.filter(row => !row.isSubtotal);
 
             let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "No.;Nomor;N a m a;Alamat;Jtp Angsuran;Saldo;Kol;sudahbayar\n";
+            csvContent += "No.;Nomor;N a m a;Alamat;Jtp Angsuran;Saldo;Kol;sudahbayar;basil\n";
 
             cleanRows.forEach((row, idx) => {
                 const line = [
@@ -677,7 +865,8 @@
                     `"${row.jtpAngs}"`,
                     row.saldo,
                     `"${row.kol}"`,
-                    `""`
+                    `"${row.sudahbayar || ''}"`,
+                    row.basil || ""
                 ].join(";");
                 csvContent += line + "\n";
             });
