@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pembaca & Ekstraktor Multi-PDF Kolektibilitas</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <!-- SheetJS (XLSX) CDN -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- PapaParse untuk Parsing CSV Akurat & Presisi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         :root{
             --mdr-navy-900:#00234A;
@@ -27,194 +26,97 @@
             --mdr-maroon:#7A1E1E;
         }
         body{
-            background:
-                radial-gradient(1200px 400px at 100% -10%, rgba(255,198,41,0.10), transparent 60%),
-                var(--mdr-bg);
+            background: radial-gradient(1200px 400px at 100% -10%, rgba(255,198,41,0.10), transparent 60%), var(--mdr-bg);
             font-family: 'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
         }
         .livin-header{
             background: linear-gradient(120deg, var(--mdr-navy-900) 0%, var(--mdr-navy-800) 55%, var(--mdr-blue-500) 100%);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
         }
-        .livin-header::after{
-            content:""; position:absolute; right:-60px; top:-80px;
-            width:220px; height:220px;
-            background: radial-gradient(circle, rgba(255,198,41,0.35) 0%, transparent 70%);
-            border-radius:50%;
-        }
-        .btn-gold{
-            background: linear-gradient(135deg, var(--mdr-gold-500), var(--mdr-gold-600));
-            color: var(--mdr-navy-900);
-        }
-        .btn-gold:hover{ filter: brightness(1.05); }
-        .btn-navy{
-            background: linear-gradient(135deg, var(--mdr-navy-800), var(--mdr-blue-500));
-            color: white;
-        }
-        .btn-navy:hover{ filter: brightness(1.1); }
-        .btn-outline-navy{
-            background: white; color: var(--mdr-navy-800);
-            border: 1.5px solid var(--mdr-navy-800);
-        }
-        .btn-outline-navy:hover{ background: var(--mdr-blue-100); }
-        .btn-danger-soft{ background:#FDEDED; color:#B3261E; }
-        .btn-danger-soft:hover{ background:#FADBD9; }
-
-        table thead th{
-            background: linear-gradient(180deg, var(--mdr-navy-800), var(--mdr-navy-900));
-            color: #F5F8FC; font-weight: 700; letter-spacing: 0.02em;
-        }
-        table thead th.col-sudahbayar{
-            background: linear-gradient(180deg, var(--mdr-gold-500), var(--mdr-gold-600));
-            color: var(--mdr-navy-900);
-        }
-        table thead th.col-basil{
-            background: linear-gradient(180deg, #00A651, #007A3B);
-            color: white;
-        }
+        .btn-gold{ background: linear-gradient(135deg, var(--mdr-gold-500), var(--mdr-gold-600)); color: var(--mdr-navy-900); }
+        .btn-navy{ background: linear-gradient(135deg, var(--mdr-navy-800), var(--mdr-blue-500)); color: white; }
+        .btn-outline-navy{ background: white; color: var(--mdr-navy-800); border: 1.5px solid var(--mdr-navy-800); }
+        
+        table thead th{ background: linear-gradient(180deg, var(--mdr-navy-800), var(--mdr-navy-900)); color: #F5F8FC; font-weight: 700; }
+        table thead th.col-sudahbayar{ background: linear-gradient(180deg, var(--mdr-gold-500), var(--mdr-gold-600)); color: var(--mdr-navy-900); }
+        table thead th.col-basil{ background: linear-gradient(180deg, #00A651, #007A3B); color: white; }
         tbody tr.row-even{ background: #ffffff; }
         tbody tr.row-odd{ background: var(--mdr-blue-100); }
-        tbody tr:hover{ background: #DCEBFB; }
-        tbody tr.row-subtotal{
-            background: linear-gradient(90deg, #FFF6DE, #FFEBB0);
-            border-top: 2px solid var(--mdr-gold-600);
-            border-bottom: 2px solid var(--mdr-gold-600);
-        }
-
-        .kol-badge{
-            display:inline-flex; align-items:center; justify-content:center;
-            min-width: 26px; height: 22px; padding: 0 6px;
-            border-radius: 999px; font-weight: 800; font-size: 11px;
-            color: white; line-height: 1;
-        }
+        tbody tr.row-subtotal{ background: linear-gradient(90deg, #FFF6DE, #FFEBB0); border-y: 2px solid var(--mdr-gold-600); }
+        
+        .kol-badge{ display:inline-flex; align-items:center; justify-content:center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 999px; font-weight: 800; font-size: 11px; color: white; }
         .kol-1{ background: var(--mdr-green); }
         .kol-2{ background: var(--mdr-amber); color:#3A2900;}
         .kol-3{ background: var(--mdr-blue-500); }
         .kol-4{ background: var(--mdr-red); }
         .kol-5{ background: var(--mdr-maroon); }
-        .kol-dash{ background:#B9C4D0; color:#334; }
-
-        .filter-segment{
-            background: var(--mdr-navy-900); border-radius: 999px; padding: 4px;
-            display:inline-flex; gap: 2px;
-        }
+        
+        .filter-segment{ background: var(--mdr-navy-900); border-radius: 999px; padding: 4px; display:inline-flex; gap: 2px; }
         .filter-segment label{ position: relative; cursor: pointer; }
         .filter-segment input{ position:absolute; opacity:0; pointer-events:none; }
-        .filter-segment span{
-            display:inline-flex; align-items:center; padding: 7px 14px;
-            border-radius: 999px; font-size: 11.5px; font-weight: 600;
-            color: #C9D8EA; transition: all .15s ease; white-space: nowrap;
-        }
-        .filter-segment input:checked + span{
-            background: var(--mdr-gold-500); color: var(--mdr-navy-900);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-        }
-        .stat-pill{
-            background: linear-gradient(135deg, var(--mdr-navy-800), var(--mdr-blue-500));
-            color: white;
-        }
-        ::-webkit-scrollbar{ height:8px; width:8px; }
-        ::-webkit-scrollbar-thumb{ background: var(--mdr-navy-700); border-radius: 999px; }
-        ::-webkit-scrollbar-track{ background: var(--mdr-blue-100); }
-
-        .top-menu{
-            display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
-            position:relative; margin-bottom:14px;
-        }
-        .top-menu a{
-            display:inline-flex; align-items:center; gap:6px;
-            background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35);
-            color:#fff; text-decoration:none; padding:8px 16px; border-radius:20px;
-            font-size:12.5px; font-weight:600; transition:.15s background,.15s transform;
-        }
-        .top-menu a:hover{ background:rgba(255,255,255,.22); transform:translateY(-1px); }
-        .top-menu a.aktif{
-            background: var(--mdr-gold-500); color: var(--mdr-navy-900); border-color: var(--mdr-gold-500);
-        }
+        .filter-segment span{ display:inline-flex; align-items:center; padding: 7px 14px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: #C9D8EA; }
+        .filter-segment input:checked + span{ background: var(--mdr-gold-500); color: var(--mdr-navy-900); }
+        
+        .top-menu{ display:flex; justify-content:center; gap:10px; margin-bottom:14px; }
+        .top-menu a{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35); color:#fff; padding:8px 16px; border-radius:20px; font-size:12.5px; font-weight:600; text-decoration:none; }
+        .top-menu a.aktif{ background: var(--mdr-gold-500); color: var(--mdr-navy-900); border-color: var(--mdr-gold-500); }
     </style>
 </head>
 <body class="min-h-screen text-slate-800 p-3 md:p-6">
 
     <div class="max-w-6xl mx-auto space-y-4">
-
-        <!-- Header & Upload Container -->
         <div class="livin-header p-5 rounded-2xl shadow-lg border border-white/10">
             <nav class="top-menu">
                 <a href="https://appabsku.github.io/checker/">APK Checker</a>
                 <a href="https://appabsku.github.io/nisbah/">📊 ANALISA NISBAH</a>
                 <a href="https://appabsku.github.io/datakol/" class="aktif">📑 Ekstrak 234</a>
             </nav>
-            <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg btn-gold flex items-center justify-center font-black text-sm shadow">L</div>
-                        <h1 class="text-xl font-bold text-white">Ekstraktor Multi-PDF Kolektibilitas</h1>
-                    </div>
-                    <p class="text-xs text-blue-100/80 mt-1 ml-10">Pilih PDF Kolektibilitas dan Upload CSV/URL Google Sheets Basil.</p>
+                    <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg btn-gold inline-flex items-center justify-center font-black text-sm">L</span>
+                        Ekstraktor Multi-PDF Kolektibilitas
+                    </h1>
+                    <p class="text-xs text-blue-100/80 mt-1 ml-10">Unggah PDF Kolektibilitas & Ambil Data Basil Otomatis via CSV URL.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <label class="flex items-center justify-center px-4 py-2.5 btn-gold font-bold text-xs rounded-full shadow-md cursor-pointer transition">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <label class="flex items-center px-4 py-2.5 btn-gold font-bold text-xs rounded-full shadow cursor-pointer">
                         + PDF Kol
                         <input type="file" id="fileInput" accept="application/pdf" multiple class="hidden">
                     </label>
 
-                    <label class="flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md cursor-pointer transition">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        Upload CSV Basil
-                        <input type="file" id="csvFileInput" accept=".csv,.txt" class="hidden">
-                    </label>
-
-                    <button onclick="openUrlModal()" class="flex items-center justify-center px-4 py-2.5 btn-navy font-bold text-xs rounded-full shadow-md transition">
-                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                        URL Sheets
+                    <button onclick="fetchDirectCSV()" class="flex items-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow transition">
+                        ⚡ Load Data Basil
                     </button>
 
-                    <button id="resetBtn" onclick="resetAllData()" class="hidden flex items-center justify-center px-3 py-2.5 btn-danger-soft font-semibold text-xs rounded-full transition">
-                        Reset
-                    </button>
-
-                    <button id="exportXlsxBtn" onclick="exportToExcel()" class="hidden flex items-center justify-center px-4 py-2.5 btn-outline-navy font-semibold text-xs rounded-full shadow transition">
-                        Download XLSX
-                    </button>
-
-                    <button id="exportCsvBtn" onclick="exportToCSV()" class="hidden flex items-center justify-center px-4 py-2.5 btn-navy font-semibold text-xs rounded-full shadow transition">
-                        Download CSV
-                    </button>
+                    <button id="resetBtn" onclick="resetAllData()" class="hidden px-3 py-2.5 bg-red-100 text-red-700 font-semibold text-xs rounded-full">Reset</button>
+                    <button id="exportXlsxBtn" onclick="exportToExcel()" class="hidden px-4 py-2.5 btn-outline-navy font-semibold text-xs rounded-full">Download XLSX</button>
                 </div>
             </div>
 
-            <div id="fileListContainer" class="relative mt-3 text-xs hidden">
+            <div id="fileListContainer" class="mt-3 text-xs hidden">
                 <span class="font-semibold text-blue-100">File Terbaca:</span>
                 <ul id="fileList" class="list-disc list-inside text-amber-200 mt-1 space-y-0.5"></ul>
             </div>
         </div>
 
-        <!-- Tabel Hasil Ekstraksi -->
         <div id="resultContainer" class="hidden bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
-            <div class="p-3.5 bg-white border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div class="p-3.5 bg-white border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-3">
                 <div class="flex items-center gap-2">
-                    <h2 class="font-bold text-xs text-[var(--mdr-navy-800)] uppercase tracking-wider">Hasil Ekstraksi Data</h2>
-                    <span id="rowCount" class="text-xs stat-pill px-2.5 py-1 rounded-full font-bold shadow-sm">0 Data</span>
+                    <h2 class="font-bold text-xs text-[var(--mdr-navy-800)] uppercase">Hasil Ekstraksi Data</h2>
+                    <span id="rowCount" class="text-xs bg-slate-100 px-2.5 py-1 rounded-full font-bold">0 Data</span>
                 </div>
 
-                <div class="filter-segment shadow-inner">
-                    <label>
-                        <input type="radio" name="viewMode" value="all" onchange="toggleViewMode()">
-                        <span>Semua Data</span>
-                    </label>
-                    <label>
-                        <input type="radio" name="viewMode" value="filtered" checked onchange="toggleViewMode()">
-                        <span>Gabungan Kol 2,3,4 (Semua Marketing)</span>
-                    </label>
+                <div class="filter-segment">
+                    <label><input type="radio" name="viewMode" value="all" onchange="toggleViewMode()"><span>Semua Data</span></label>
+                    <label><input type="radio" name="viewMode" value="filtered" checked onchange="toggleViewMode()"><span>Gabungan Kol 2,3,4</span></label>
                 </div>
             </div>
 
             <div class="overflow-x-auto max-h-[650px]">
                 <table class="w-full text-left text-xs border-collapse">
-                    <thead class="uppercase sticky top-0 shadow-sm">
+                    <thead class="uppercase sticky top-0">
                         <tr>
                             <th class="p-2.5 text-center">No.</th>
                             <th class="p-2.5">Nomor</th>
@@ -223,38 +125,26 @@
                             <th class="p-2.5">Jtp Angsuran</th>
                             <th class="p-2.5 text-right">Saldo</th>
                             <th class="p-2.5 text-center">Kol</th>
-                            <th class="p-2.5 text-center col-sudahbayar border-l border-amber-300">sudahbayar</th>
-                            <th class="p-2.5 text-center col-basil border-l border-emerald-400">basil</th>
+                            <th class="p-2.5 text-center col-sudahbayar">sudahbayar</th>
+                            <th class="p-2.5 text-center col-basil">basil</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-100">
-                    </tbody>
+                    <tbody id="tableBody" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </div>
 
         <div id="loading" class="hidden text-center py-12">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[var(--mdr-navy-800)] border-t-[var(--mdr-gold-500)]"></div>
-            <p id="loadingStatus" class="mt-2 text-xs text-[var(--mdr-navy-800)] font-semibold">Memproses file...</p>
-        </div>
-
-    </div>
-
-    <!-- Modal Input URL Google Sheets -->
-    <div id="urlModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <h3 class="font-bold text-base text-[var(--mdr-navy-900)]">Masukkan URL Google Sheets Basil</h3>
-            <p class="text-xs text-slate-500">Gunakan CorsProxy bawaan otomatis untuk mengambil link publikasi Google Sheets Anda.</p>
-            <input type="text" id="sheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:border-[var(--mdr-blue-500)] font-mono">
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeUrlModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-full text-xs font-semibold hover:bg-slate-300">Batal</button>
-                <button onclick="processSheetsUrl()" class="px-4 py-2 btn-gold rounded-full text-xs font-bold shadow">Proses URL</button>
-            </div>
+            <p id="loadingStatus" class="mt-2 text-xs text-[var(--mdr-navy-800)] font-semibold">Memproses data...</p>
         </div>
     </div>
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // URL Publik CSV Resmi dari Link yang Anda Berikan
+        const DIRECT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTtHNt9YtHZwneyz_8LP2UUOSxsEUvLW3VCqAE0hNh7VVxiCyTQFE5FINtDhbJNWXvs5Wb_B9Dd0CA-/pub?output=csv";
 
         let parsedData = [];
         let loadedFiles = [];
@@ -262,7 +152,6 @@
         let parsedBasilMap = [];
 
         document.getElementById('fileInput').addEventListener('change', handleFiles);
-        document.getElementById('csvFileInput').addEventListener('change', handleCSVFile);
 
         function cleanToNumber(str) {
             if (!str) return 0;
@@ -272,16 +161,8 @@
         }
 
         function formatNumber(num) {
-            if (num === 0 || num === "-" || !num) return "-";
+            if (!num || num === 0 || num === "-") return "-";
             return num.toLocaleString('id-ID');
-        }
-
-        function kolBadge(kol) {
-            const k = String(kol).trim();
-            if (!["1","2","3","4","5"].includes(k)) {
-                return `<span class="kol-badge kol-dash">${k}</span>`;
-            }
-            return `<span class="kol-badge kol-${k}">${k}</span>`;
         }
 
         function cleanName(name) {
@@ -289,345 +170,66 @@
             return name.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
         }
 
-        function openUrlModal() {
-            document.getElementById('urlModal').classList.remove('hidden');
-        }
-
-        function closeUrlModal() {
-            document.getElementById('urlModal').classList.add('hidden');
-        }
-
-        // BACA FILE CSV LOKAL DIRECT (TIDAK KENA BLOKIR BROWSER/CORS)
-        function handleCSVFile(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            showLoading(true, "Membaca file CSV Basil...");
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const csvText = evt.target.result;
-                parseBasilCSV(csvText);
-                applyBasilMatching();
-
-                if (!loadedFiles.includes(file.name)) {
-                    loadedFiles.push(file.name);
-                }
-
-                updateFileListUI();
-                toggleViewMode();
-                showLoading(false);
-                alert("Berhasil mengimpor data Basil dari File CSV!");
-            };
-            reader.readAsText(file);
-            e.target.value = '';
-        }
-
-        async function processSheetsUrl() {
-            let urlInput = document.getElementById('sheetsUrlInput').value.trim();
-            if (!urlInput) {
-                alert("Masukkan URL Google Sheets terlebih dahulu!");
-                return;
-            }
-
-            let csvUrl = urlInput;
-            if (urlInput.includes('/pubhtml')) {
-                csvUrl = urlInput.replace(/\/pubhtml.*$/, '/pub?output=csv');
-            } else if (urlInput.includes('/edit')) {
-                csvUrl = urlInput.replace(/\/edit.*$/, '/export?format=csv');
-            } else if (!urlInput.includes('output=csv') && !urlInput.includes('format=csv')) {
-                if (urlInput.endsWith('/pub')) {
-                    csvUrl = urlInput + '?output=csv';
-                }
-            }
-
-            closeUrlModal();
-            showLoading(true, "Mengunduh & Memproses Data Basil...");
-
-            // Proxy cors-anywhere/allorigins multi-fallback
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(csvUrl)}`,
-                `https://corsproxy.io/?${encodeURIComponent(csvUrl)}`,
-                csvUrl
-            ];
-
-            let csvText = null;
-            for (let proxy of proxies) {
-                try {
-                    const response = await fetch(proxy);
-                    if (response.ok) {
-                        csvText = await response.text();
-                        break;
-                    }
-                } catch (e) {
-                    console.warn("Proxy gagal, mencoba opsi berikutnya...", e);
-                }
-            }
-
-            if (csvText) {
-                parseBasilCSV(csvText);
-                applyBasilMatching();
-
-                if (!loadedFiles.includes("Google Sheets Basil")) {
-                    loadedFiles.push("Google Sheets Basil");
-                }
+        // AMBIL DATA CSV DIRECT TANPA CORS PROXY ERROR
+        async function fetchDirectCSV() {
+            showLoading(true, "Mengunduh CSV Data Basil...");
+            try {
+                const response = await fetch(DIRECT_CSV_URL);
+                if (!response.ok) throw new Error("Gagal mengunduh CSV");
                 
+                const csvText = await response.text();
+                parseBasilCSV(csvText);
+                applyBasilMatching();
+
+                if (!loadedFiles.includes("Google Sheet Basil (CSV Direct)")) {
+                    loadedFiles.push("Google Sheet Basil (CSV Direct)");
+                }
+
                 updateFileListUI();
                 toggleViewMode();
                 showLoading(false);
-                alert("Berhasil! Data Basil dari Google Sheets telah dicocokkan.");
-            } else {
+                alert("Berhasil! Data Basil dari link CSV publik telah dimuat & dicocokkan.");
+            } catch (err) {
+                console.error("Fetch CSV Error:", err);
                 showLoading(false);
-                alert("Gagal mengambil via online karena diblokir CORS Browser lokal.\n\nSaran: Gunakan tombol 'Upload CSV Basil' (Download dulu Google Sheets Anda ke CSV).");
+                alert("Gagal membaca link CSV publik Google Sheets. Pastikan koneksi terhubung.");
             }
         }
 
         function parseBasilCSV(csvText) {
-            const rows = csvText.split('\n');
-            rows.forEach(row => {
-                const cols = row.split(/,|\t/);
-                if (cols.length >= 2) {
-                    for (let i = 0; i < cols.length; i++) {
-                        let cell = cols[i].replace(/"/g, '').trim();
-                        let num = cleanToNumber(cell);
-                        if (num > 1000) {
-                            let nameCandidate = "";
-                            for (let j = 0; j < i; j++) {
-                                let potentialName = cols[j].replace(/"/g, '').trim();
-                                if (potentialName && !/^\d+$/.test(potentialName)) {
-                                    nameCandidate = potentialName;
-                                    break;
-                                }
+            parsedBasilMap = [];
+            // Parse CSV secara presisi dengan PapaParse
+            Papa.parse(csvText, {
+                header: false,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const rows = results.data;
+                    rows.forEach(row => {
+                        let nameCandidate = "";
+                        let numbers = [];
+
+                        row.forEach(cell => {
+                            let valStr = String(cell).trim();
+                            let num = cleanToNumber(valStr);
+                            if (num > 0) numbers.push(num);
+
+                            if (!nameCandidate && valStr && !/^\d+$/.test(valStr) && valStr.length > 3) {
+                                nameCandidate = valStr;
                             }
-                            if (nameCandidate) {
-                                parsedBasilMap.push({
-                                    nama: cleanName(nameCandidate),
-                                    saldo: 0,
-                                    basil: num
-                                });
-                                break;
-                            }
+                        });
+
+                        // Ambil nilai basil (biasanya angka terbesar atau kolom pot basil)
+                        if (nameCandidate && numbers.length > 0) {
+                            let basilVal = numbers[numbers.length - 1]; // Mengambil angka hasil/basil
+                            let saldoVal = numbers.length > 1 ? numbers[0] : 0;
+                            
+                            parsedBasilMap.push({
+                                nama: cleanName(nameCandidate),
+                                saldo: saldoVal,
+                                basil: basilVal
+                            });
                         }
-                    }
-                }
-            });
-        }
-
-        async function handleFiles(e) {
-            const files = Array.from(e.target.files);
-            if (files.length === 0) return;
-
-            showLoading(true, `Membaca ${files.length} file PDF sekaligus...`);
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (loadedFiles.includes(file.name)) continue;
-
-                showLoading(true, `Membaca (${i + 1}/${files.length}): ${file.name}`);
-
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
-                    let fullTextLines = [];
-
-                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                        const page = await pdf.getPage(pageNum);
-                        const textContent = await page.getTextContent();
-
-                        const linesMap = {};
-                        textContent.items.forEach(item => {
-                            const yRaw = item.transform[5];
-                            let foundY = Object.keys(linesMap).find(y => Math.abs(y - yRaw) < 3.5);
-                            if (!foundY) {
-                                foundY = yRaw;
-                                linesMap[foundY] = [];
-                            }
-                            linesMap[foundY].push({ x: item.transform[4], text: item.str });
-                        });
-
-                        const sortedY = Object.keys(linesMap).sort((a, b) => b - a);
-
-                        sortedY.forEach(y => {
-                            const lineItems = linesMap[y].sort((a, b) => a.x - b.x);
-                            const lineString = lineItems.map(item => item.text).join(" ").replace(/\s+/g, ' ').trim();
-                            if (lineString) fullTextLines.push(lineString);
-                        });
-                    }
-
-                    const isBasilPdf = file.name.toLowerCase().includes("cheker") || 
-                                       file.name.toLowerCase().includes("nisbah") || 
-                                       file.name.toLowerCase().includes("randu") ||
-                                       fullTextLines.some(l => l.includes("Pot. Basil") || l.includes("BASIL"));
-
-                    if (isBasilPdf) {
-                        parseBasilLines(fullTextLines);
-                    } else {
-                        parsePDFLines(fullTextLines);
-                    }
-
-                    loadedFiles.push(file.name);
-                } catch (err) {
-                    console.error(`Gagal membaca ${file.name}:`, err);
-                }
-            }
-
-            applyBasilMatching();
-
-            e.target.value = '';
-            showLoading(false);
-            updateFileListUI();
-            toggleViewMode();
-        }
-
-        function extractNamaAndAlamat(rawString) {
-            if (!rawString) return { nama: "NASABAH", alamat: "-" };
-            let text = rawString.replace(/^[\d\s\.-]+/, '').trim();
-
-            const addressKeywords = [
-                "\\bRT\\.?\\b", "\\bRW\\.?\\b", "\\bRT\\d+", "\\bRW\\d+",
-                "\\bDK\\.?\\b", "\\bDKH\\.?\\b", "\\bDSN\\.?\\b", "\\bDS\\.?\\b",
-                "\\bDUKUH\\b", "\\bDUKUHAN\\b", "\\bDUSUN\\b", "\\bDESA\\b",
-                "\\bKEL\\.?\\b", "\\bKELURAHAN\\b", "\\bKEC\\.?\\b", "\\bKECAMATAN\\b",
-                "\\bJL\\.?\\b", "\\bJLN\\.?\\b", "\\bJALAN\\b", "\\bGANG\\b", "\\bGG\\.?\\b",
-                "\\bKP\\.?\\b", "\\bKAMPUNG\\b", "\\bBLOK\\b", "\\bNO\\.?\\b",
-                "\\b\\d{1,3}\\/\\d{1,3}\\b",
-                "\\bTLOGOTUWUNG\\b", "\\bGEJEG\\b", "\\bJOMBLANG\\b", "\\bKEDUNGBANTENG\\b",
-                "\\bGUWARAN\\b", "\\bBEKUTUK\\b", "\\bTEMULUS\\b", "\\bSELOGENDER\\b",
-                "\\bKARANGTENGAH\\b", "\\bSAMBONGMACAN\\b", "\\bRANDUBLATUNG\\b",
-                "\\bNGADIROJO\\b", "\\bJAGONG\\b", "\\bSAMBONGWANGAN\\b", "\\bNGLIRON\\b",
-                "\\bTANJUNG\\b", "\\bKDUNGTALANG\\b", "\\bPLOSO\\b", "\\bWULUNG\\b",
-                "\\bBUNGAS\\b", "\\bSULURSA\\b", "\\bKARANG\\b", "\\bKEPOH\\b",
-                "\\bBULAKAN\\b", "\\bBERAN\\b", "\\bDOPLANG\\b", "\\bKEDIREN\\b",
-                "\\bPUNTUK\\b", "\\bPILANG\\b", "\\bBALONGKARE\\b", "\\bSUKOREJO\\b",
-                "\\bGEMBYUNGAN\\b", "\\bKAYEN\\b", "\\bKEDUNGTUBAN\\b", "\\bPULO\\b",
-                "\\bHUTABARA\\b", "\\bFABRUR\\b"
-            ];
-
-            const regexPattern = new RegExp(addressKeywords.join("|"), "i");
-            const matchIndex = text.search(regexPattern);
-
-            if (matchIndex !== -1) {
-                const namaPart = text.substring(0, matchIndex).replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
-                const alamatPart = text.substring(matchIndex).trim();
-                return {
-                    nama: namaPart || "NASABAH",
-                    alamat: alamatPart || "-"
-                };
-            }
-
-            return {
-                nama: text.replace(/[\,\.\-\/\:\;\s]+$/, '').trim() || "NASABAH",
-                alamat: "-"
-            };
-        }
-
-        function parseBasilLines(lines) {
-            lines.forEach(line => {
-                let cleanLine = line.replace(/\b\d{2}-\d{2}-\d{4}\b/g, '');
-                const formattedNumbers = cleanLine.match(/\b\d{1,3}(\.\d{3})+\b/g);
-
-                if (formattedNumbers && formattedNumbers.length >= 2) {
-                    let saldoVal = cleanToNumber(formattedNumbers[0]);
-                    let potBasilVal = cleanToNumber(formattedNumbers[1]);
-
-                    let textClean = cleanLine.replace(/\b\d{1,3}(\.\d{3})+\b/g, '')
-                                             .replace(/^\d+\s+/, '').trim();
-
-                    if (textClean && potBasilVal > 0) {
-                        parsedBasilMap.push({
-                            nama: cleanName(textClean),
-                            saldo: saldoVal,
-                            basil: potBasilVal
-                        });
-                    }
-                }
-            });
-        }
-
-        function parsePDFLines(lines) {
-            let pendingNasabah = [];
-
-            lines.forEach(line => {
-                if (line.includes(":") || line.match(/^\d{2}-\d{4}/)) return;
-
-                const subtotalMatch = line.match(/^\d+\s+(\d{2,3})\s+([A-Z\s\.]+)\s+([\d\.,]+)\s+([\d\.,]+)/);
-                const rekMatch = line.match(/\b(\d{2}-\d{4,5})\b/);
-
-                if (subtotalMatch) {
-                    const rawCode = subtotalMatch[1];
-                    const currentMktCode = rawCode.padStart(3, '0');
-                    const parsedHeader = extractNamaAndAlamat(subtotalMatch[2]);
-
-                    pendingNasabah.forEach(nasabah => {
-                        nasabah.mktCode = currentMktCode;
                     });
-
-                    pendingNasabah = [];
-
-                    parsedData.push({
-                        noRek: currentMktCode,
-                        mktCode: currentMktCode,
-                        nama: `${currentMktCode} ${parsedHeader.nama}`,
-                        alamat: "-",
-                        jtpAngs: "-",
-                        saldo: cleanToNumber(subtotalMatch[4]),
-                        kol: "-",
-                        sudahbayar: "",
-                        basil: "",
-                        isSubtotal: true
-                    });
-
-                } else if (rekMatch) {
-                    const noRek = rekMatch[1];
-
-                    const dateMatches = line.match(/\b\d{2}-\d{2}-\d{4}\b/g);
-                    let jtpAngs = "-";
-                    if (dateMatches && dateMatches.length >= 2) {
-                        jtpAngs = dateMatches[1];
-                    } else if (dateMatches && dateMatches.length === 1) {
-                        jtpAngs = dateMatches[0];
-                    }
-
-                    const numberMatches = line.match(/\b\d{1,3}(\.\d{3})*,\d{2}\b/g);
-                    let saldoNum = 0;
-
-                    if (numberMatches && numberMatches.length >= 2) {
-                        saldoNum = cleanToNumber(numberMatches[1]);
-                    } else if (numberMatches && numberMatches.length === 1) {
-                        saldoNum = cleanToNumber(numberMatches[0]);
-                    }
-
-                    let kol = "4";
-                    const kolMatch = line.match(/\b(\d{1}\s+hari)\s+(\d{1})\b/i) || line.match(/\b(hari)\s+(\d{1})\b/i);
-                    if (kolMatch) {
-                        kol = kolMatch[2];
-                    } else {
-                        const singleKolMatch = line.match(/\s+([1-5])\s*$/) || line.match(/\s+([1-5])\s+/);
-                        if (singleKolMatch) kol = singleKolMatch[1];
-                    }
-
-                    let afterRek = line.substring(line.indexOf(noRek) + noRek.length).trim();
-                    if (dateMatches && dateMatches.length > 0) {
-                        afterRek = afterRek.split(dateMatches[0])[0].trim();
-                    }
-
-                    const { nama, alamat } = extractNamaAndAlamat(afterRek);
-
-                    const nasabahRow = {
-                        noRek: noRek,
-                        mktCode: "999",
-                        nama: nama,
-                        alamat: alamat,
-                        jtpAngs: jtpAngs,
-                        saldo: saldoNum,
-                        kol: String(kol).trim(),
-                        sudahbayar: "",
-                        basil: "",
-                        isSubtotal: false
-                    };
-
-                    parsedData.push(nasabahRow);
-                    pendingNasabah.push(nasabahRow);
                 }
             });
         }
@@ -653,76 +255,103 @@
             });
         }
 
-        function getFilteredMarketingData() {
-            const allowedKol = ["2", "3", "4"];
+        async function handleFiles(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
 
-            const filteredRows = parsedData.filter(row => {
-                if (row.isSubtotal) return false;
-                const isKolMatch = allowedKol.includes(String(row.kol)) || row.kol === "-";
-                return isKolMatch;
-            });
+            showLoading(true, `Membaca ${files.length} file PDF...`);
 
-            const availableMktCodes = [...new Set(filteredRows.map(r => r.mktCode))].sort();
+            for (let file of files) {
+                if (loadedFiles.includes(file.name)) continue;
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(new Uint8Array(arrayBuffer)).promise;
+                    let fullTextLines = [];
 
-            let processedResult = [];
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        const linesMap = {};
 
-            availableMktCodes.forEach(mkt => {
-                const groupRows = filteredRows.filter(r => r.mktCode === mkt);
+                        textContent.items.forEach(item => {
+                            const yRaw = item.transform[5];
+                            let foundY = Object.keys(linesMap).find(y => Math.abs(y - yRaw) < 3.5) || yRaw;
+                            if (!linesMap[foundY]) linesMap[foundY] = [];
+                            linesMap[foundY].push({ x: item.transform[4], text: item.str });
+                        });
 
-                if (groupRows.length > 0) {
-                    processedResult = processedResult.concat(groupRows);
-                    const totalSaldo = groupRows.reduce((acc, curr) => acc + curr.saldo, 0);
-                    const subInfo = parsedData.find(p => p.isSubtotal && p.mktCode === mkt);
+                        Object.keys(linesMap).sort((a, b) => b - a).forEach(y => {
+                            const lineItems = linesMap[y].sort((a, b) => a.x - b.x);
+                            const lineString = lineItems.map(item => item.text).join(" ").replace(/\s+/g, ' ').trim();
+                            if (lineString) fullTextLines.push(lineString);
+                        });
+                    }
 
-                    let namaMktDisplay = subInfo ? subInfo.nama : `${mkt} MARKETING`;
+                    parsePDFLines(fullTextLines);
+                    loadedFiles.push(file.name);
+                } catch (err) {
+                    console.error(`Gagal baca PDF ${file.name}:`, err);
+                }
+            }
 
-                    processedResult.push({
-                        noRek: mkt,
-                        mktCode: mkt,
-                        nama: namaMktDisplay,
-                        alamat: "-",
-                        jtpAngs: "-",
-                        saldo: totalSaldo,
-                        kol: "-",
-                        sudahbayar: "",
-                        basil: "",
-                        isSubtotal: true
+            // Otomatis fetch CSV jika PDF selesai di-upload
+            await fetchDirectCSV();
+            e.target.value = '';
+        }
+
+        function parsePDFLines(lines) {
+            let pendingNasabah = [];
+            lines.forEach(line => {
+                if (line.includes(":") || line.match(/^\d{2}-\d{4}/)) return;
+
+                const subtotalMatch = line.match(/^\d+\s+(\d{2,3})\s+([A-Z\s\.]+)\s+([\d\.,]+)\s+([\d\.,]+)/);
+                const rekMatch = line.match(/\b(\d{2}-\d{4,5})\b/);
+
+                if (subtotalMatch) {
+                    const currentMktCode = subtotalMatch[1].padStart(3, '0');
+                    pendingNasabah.forEach(n => n.mktCode = currentMktCode);
+                    pendingNasabah = [];
+
+                    parsedData.push({
+                        noRek: currentMktCode, mktCode: currentMktCode,
+                        nama: `${currentMktCode} ${subtotalMatch[2].trim()}`,
+                        alamat: "-", jtpAngs: "-", saldo: cleanToNumber(subtotalMatch[4]),
+                        kol: "-", sudahbayar: "", basil: "", isSubtotal: true
                     });
+                } else if (rekMatch) {
+                    const noRek = rekMatch[1];
+                    const dateMatches = line.match(/\b\d{2}-\d{2}-\d{4}\b/g);
+                    let jtpAngs = dateMatches ? (dateMatches[1] || dateMatches[0]) : "-";
+
+                    const numberMatches = line.match(/\b\d{1,3}(\.\d{3})*,\d{2}\b/g);
+                    let saldoNum = numberMatches ? cleanToNumber(numberMatches[numberMatches.length - 1]) : 0;
+
+                    let kol = "4";
+                    const kolMatch = line.match(/\b(\d{1}\s+hari)\s+(\d{1})\b/i) || line.match(/\s+([1-5])\s*$/);
+                    if (kolMatch) kol = kolMatch[2] || kolMatch[1];
+
+                    let namaPart = line.substring(line.indexOf(noRek) + noRek.length).split(/\d{2}-\d{2}-\d{4}/)[0].trim();
+
+                    const nasabahRow = {
+                        noRek, mktCode: "999", nama: namaPart || "NASABAH",
+                        alamat: "-", jtpAngs, saldo: saldoNum, kol: String(kol).trim(),
+                        sudahbayar: "", basil: "", isSubtotal: false
+                    };
+
+                    parsedData.push(nasabahRow);
+                    pendingNasabah.push(nasabahRow);
                 }
             });
-
-            return processedResult;
         }
 
         function toggleViewMode() {
-            const modeElement = document.querySelector('input[name="viewMode"]:checked');
-            const mode = modeElement ? modeElement.value : 'filtered';
-
+            const mode = document.querySelector('input[name="viewMode"]:checked')?.value || 'filtered';
             if (mode === "filtered") {
-                activeViewData = getFilteredMarketingData();
+                activeViewData = parsedData.filter(r => ["2","3","4","-"].includes(r.kol));
             } else {
                 activeViewData = parsedData;
             }
             renderTable(activeViewData);
-        }
-
-        function updateFileListUI() {
-            const container = document.getElementById('fileListContainer');
-            const ul = document.getElementById('fileList');
-            ul.innerHTML = '';
-
-            if (loadedFiles.length > 0) {
-                loadedFiles.forEach(f => {
-                    const li = document.createElement('li');
-                    li.innerText = f;
-                    ul.appendChild(li);
-                });
-                container.classList.remove('hidden');
-                document.getElementById('resetBtn').classList.remove('hidden');
-            } else {
-                container.classList.add('hidden');
-                document.getElementById('resetBtn').classList.add('hidden');
-            }
         }
 
         function renderTable(data) {
@@ -731,153 +360,39 @@
 
             data.forEach((row, idx) => {
                 const tr = document.createElement('tr');
-                if (row.isSubtotal) {
-                    tr.className = 'row-subtotal font-bold text-amber-950';
-                } else {
-                    tr.className = idx % 2 === 0 ? 'row-even' : 'row-odd';
-                }
+                tr.className = row.isSubtotal ? 'row-subtotal font-bold' : (idx % 2 === 0 ? 'row-even' : 'row-odd');
 
                 tr.innerHTML = `
-                    <td class="p-2.5 text-center font-medium ${row.isSubtotal ? 'text-amber-900' : 'text-slate-500'}">${idx + 1}</td>
-                    <td class="p-2.5 font-mono whitespace-nowrap text-[var(--mdr-navy-800)]">${row.noRek}</td>
+                    <td class="p-2.5 text-center font-medium">${idx + 1}</td>
+                    <td class="p-2.5 font-mono text-[var(--mdr-navy-800)]">${row.noRek}</td>
                     <td class="p-2.5 font-bold">${row.nama}</td>
-                    <td class="p-2.5 ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.alamat}</td>
-                    <td class="p-2.5 whitespace-nowrap ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.jtpAngs}</td>
+                    <td class="p-2.5 text-slate-600">${row.alamat}</td>
+                    <td class="p-2.5 whitespace-nowrap">${row.jtpAngs}</td>
                     <td class="p-2.5 text-right font-mono font-semibold text-[var(--mdr-navy-800)]">${formatNumber(row.saldo)}</td>
-                    <td class="p-2.5 text-center">${kolBadge(row.kol)}</td>
-                    <td class="p-2.5 text-center font-mono text-slate-400 bg-amber-50/60 border-l border-amber-200">${row.sudahbayar || ''}</td>
-                    <td class="p-2.5 text-right font-mono text-emerald-700 bg-emerald-50/60 border-l border-emerald-200 font-semibold">${row.basil ? formatNumber(row.basil) : ''}</td>
+                    <td class="p-2.5 text-center"><span class="kol-badge kol-${row.kol}">${row.kol}</span></td>
+                    <td class="p-2.5 text-center font-mono bg-amber-50/60">${row.sudahbayar || ''}</td>
+                    <td class="p-2.5 text-right font-mono text-emerald-700 bg-emerald-50/60 font-semibold">${formatNumber(row.basil)}</td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('rowCount').innerText = `${data.length} Baris Tampil`;
             document.getElementById('resultContainer').classList.remove('hidden');
-            document.getElementById('exportCsvBtn').classList.remove('hidden');
             document.getElementById('exportXlsxBtn').classList.remove('hidden');
         }
 
+        function updateFileListUI() {
+            const container = document.getElementById('fileListContainer');
+            const ul = document.getElementById('fileList');
+            ul.innerHTML = loadedFiles.map(f => `<li>${f}</li>`).join('');
+            container.classList.toggle('hidden', loadedFiles.length === 0);
+            document.getElementById('resetBtn').classList.toggle('hidden', loadedFiles.length === 0);
+        }
+
         function resetAllData() {
-            parsedData = [];
-            loadedFiles = [];
-            activeViewData = [];
-            parsedBasilMap = [];
-            document.getElementById('fileInput').value = '';
+            parsedData = []; loadedFiles = []; activeViewData = []; parsedBasilMap = [];
             document.getElementById('resultContainer').classList.add('hidden');
-            document.getElementById('exportCsvBtn').classList.add('hidden');
-            document.getElementById('exportXlsxBtn').classList.add('hidden');
             updateFileListUI();
-        }
-
-        function exportToExcel() {
-            if (activeViewData.length === 0) return;
-
-            const cleanRows = activeViewData.filter(row => !row.isSubtotal);
-            const availableMktCodes = [...new Set(cleanRows.map(row => row.mktCode))].sort();
-
-            const workbook = XLSX.utils.book_new();
-
-            const formatRowsForSheet = (rows) => {
-                return rows.map((row, idx) => {
-                    return {
-                        "No.": idx + 1,
-                        "Nomor": row.noRek,
-                        "N a m a": row.nama,
-                        "Alamat": row.alamat,
-                        "Jtp Angsuran": row.jtpAngs,
-                        "Saldo": Number(row.saldo),
-                        "Kol": row.kol,
-                        "sudahbayar": row.sudahbayar || "",
-                        "basil": row.basil ? Number(row.basil) : ""
-                    };
-                });
-            };
-
-            const buildWorksheetClean = (rowsData) => {
-                const formatted = formatRowsForSheet(rowsData);
-                const worksheet = XLSX.utils.json_to_sheet(formatted);
-
-                const range = XLSX.utils.decode_range(worksheet['!ref']);
-                for (let R = range.s.r + 1; R <= range.e.r; ++R) {
-                    const cellSaldo = worksheet[XLSX.utils.encode_cell({c: 5, r: R})];
-                    if (cellSaldo) cellSaldo.t = 'n';
-
-                    const cellBasil = worksheet[XLSX.utils.encode_cell({c: 8, r: R})];
-                    if (cellBasil && cellBasil.v !== "") cellBasil.t = 'n';
-                }
-
-                const colWidths = [];
-                const headers = ["No.", "Nomor", "N a m a", "Alamat", "Jtp Angsuran", "Saldo", "Kol", "sudahbayar", "basil"];
-
-                headers.forEach((header) => {
-                    let maxLen = header.length;
-                    formatted.forEach(row => {
-                        const val = row[header];
-                        let strVal = val !== null && val !== undefined ? String(val) : "";
-                        if ((header === "Saldo" || header === "basil") && typeof val === "number") {
-                            strVal = val.toLocaleString('id-ID');
-                        }
-                        if (strVal.length > maxLen) maxLen = strVal.length;
-                    });
-                    colWidths.push({ wch: maxLen + 5 });
-                });
-
-                worksheet['!cols'] = colWidths;
-                return worksheet;
-            };
-
-            availableMktCodes.forEach(mktCode => {
-                const mktRows = cleanRows.filter(row => row.mktCode === mktCode);
-                if (mktRows.length > 0) {
-                    const subInfo = parsedData.find(p => p.isSubtotal && p.mktCode === mktCode);
-                    let sheetName = mktCode;
-                    if (subInfo && subInfo.nama) {
-                        sheetName = subInfo.nama.replace(/[\\/\?\*\[\]]/g, '').substring(0, 30).trim();
-                    }
-                    const ws = buildWorksheetClean(mktRows);
-                    XLSX.utils.book_append_sheet(workbook, ws, sheetName);
-                }
-            });
-
-            if (availableMktCodes.length === 0 && cleanRows.length > 0) {
-                const ws = buildWorksheetClean(cleanRows);
-                XLSX.utils.book_append_sheet(workbook, ws, "DATA KOLEKTIBILITAS");
-            }
-
-            const filename = `Data_Kolektibilitas_Marketing_${new Date().toISOString().slice(0,10)}.xlsx`;
-            XLSX.writeFile(workbook, filename);
-        }
-
-        function exportToCSV() {
-            if (activeViewData.length === 0) return;
-
-            const cleanRows = activeViewData.filter(row => !row.isSubtotal);
-
-            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-            csvContent += "No.;Nomor;N a m a;Alamat;Jtp Angsuran;Saldo;Kol;sudahbayar;basil\n";
-
-            cleanRows.forEach((row, idx) => {
-                const line = [
-                    idx + 1,
-                    `"${row.noRek}"`,
-                    `"${row.nama}"`,
-                    `"${row.alamat}"`,
-                    `"${row.jtpAngs}"`,
-                    row.saldo,
-                    `"${row.kol}"`,
-                    `"${row.sudahbayar || ''}"`,
-                    row.basil || ""
-                ].join(";");
-                csvContent += line + "\n";
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Data_Kolektibilitas_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         }
 
         function showLoading(isLoading, message = "Memproses...") {
