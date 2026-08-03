@@ -350,17 +350,18 @@
                         sortedY.forEach(y => {
                             const lineItems = linesMap[y].sort((a, b) => a.x - b.x);
                             const lineString = lineItems.map(item => item.text).join(" ").replace(/\s+/g, ' ').trim();
-                            if (lineString) fullTextLines.push(lineString);
+                            if (lineString) fullTextLines.push({ text: lineString, items: lineItems });
                         });
                     }
 
+                    const flatText = fullTextLines.map(l => l.text);
                     const isBasilPdf = file.name.toLowerCase().includes("cheker") || 
                                        file.name.toLowerCase().includes("nisbah") || 
                                        file.name.toLowerCase().includes("randu") ||
-                                       fullTextLines.some(l => l.includes("Pot. Basil") || l.includes("BASIL"));
+                                       flatText.some(l => l.includes("Pot. Basil") || l.includes("BASIL"));
 
                     if (isBasilPdf) {
-                        parseBasilLines(fullTextLines);
+                        parseBasilLines(flatText);
                     } else {
                         parsePDFLines(fullTextLines);
                     }
@@ -379,7 +380,89 @@
             toggleViewMode();
         }
 
-        function extractNamaAndAlamat(rawString) {
+        // ======================================================================
+        // EKSTRAKSI NAMA & ALAMAT BERBASIS POSISI KOLOM (X-COORDINATE)
+        // ----------------------------------------------------------------------
+        // Laporan "Daftar Kolektibilitas" dicetak dengan lebar kolom yang TETAP
+        // (fixed-width). Artinya kolom "Alamat" SELALU dimulai pada koordinat-X
+        // yang sama persis di setiap baris data, berapa pun panjang Nama-nya.
+        // Pendekatan lama menebak batas Nama/Alamat memakai daftar kata kunci
+        // nama dusun/desa yang di-hardcode -> gagal total begitu ada nama
+        // dusun/desa baru yang belum ada di daftar (mis. laporan dari cabang
+        // atau wilayah lain). Pendekatan baru ini TIDAK butuh daftar kata kunci
+        // sama sekali: batas kolom Alamat dideteksi otomatis dari data itu
+        // sendiri (posisi X yang paling sering muncul), sehingga selalu akurat
+        // untuk PDF manapun yang memakai template laporan yang sama.
+        // ======================================================================
+
+        // Menentukan koordinat-X awal kolom "Alamat" dengan menganalisis
+        // seluruh baris data yang berhasil terbaca dari satu file PDF.
+        function detectAlamatColumnX(lines) {
+            const xFrequency = {};
+
+            lines.forEach(line => {
+                const items = line.items;
+                const rekIdx = items.findIndex(it => /^\d{2}-\d{4,5}$/.test(it.text.trim()));
+                if (rekIdx === -1) return;
+
+                const dateIdx = items.findIndex((it, idx) => idx > rekIdx && /^\d{2}-\d{2}-\d{4}$/.test(it.text.trim()));
+                if (dateIdx === -1 || dateIdx <= rekIdx + 1) return;
+
+                // Item-item di antara nomor rekening dan tanggal pertama = zona Nama+Alamat
+                const zoneItems = items.slice(rekIdx + 1, dateIdx);
+                // Kata pertama zona ini SELALU bagian dari Nama, jadi diabaikan.
+                // Kata ke-2 dst berpeluang menjadi awal kolom Alamat.
+                for (let k = 1; k < zoneItems.length; k++) {
+                    const xRounded = Math.round(zoneItems[k].x);
+                    xFrequency[xRounded] = (xFrequency[xRounded] || 0) + 1;
+                }
+            });
+
+            let bestX = null;
+            let bestCount = 0;
+            Object.keys(xFrequency).forEach(x => {
+                if (xFrequency[x] > bestCount) {
+                    bestCount = xFrequency[x];
+                    bestX = parseFloat(x);
+                }
+            });
+
+            // Butuh dukungan minimal supaya deteksi bisa dipercaya (bukan kebetulan).
+            if (bestX === null || bestCount < 3) return null;
+            return bestX;
+        }
+
+        // Memisahkan Nama & Alamat dari sekumpulan item (dengan koordinat X)
+        // menggunakan batas kolom yang sudah terdeteksi.
+        function splitNamaAlamatByPosition(zoneItems, alamatColX) {
+            if (!zoneItems || zoneItems.length === 0) return { nama: "NASABAH", alamat: "-" };
+
+            const toleransi = 3; // px, antisipasi pembulatan/rendering PDF
+            const namaParts = [];
+            const alamatParts = [];
+
+            zoneItems.forEach((it, idx) => {
+                // Kata pertama zona selalu bagian Nama walau kebetulan x-nya >= alamatColX
+                if (idx > 0 && alamatColX !== null && it.x >= (alamatColX - toleransi)) {
+                    alamatParts.push(it.text);
+                } else {
+                    namaParts.push(it.text);
+                }
+            });
+
+            const nama = namaParts.join(" ").replace(/\s+/g, ' ').replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
+            const alamat = alamatParts.join(" ").replace(/\s+/g, ' ').trim();
+
+            return {
+                nama: nama || "NASABAH",
+                alamat: alamat || "-"
+            };
+        }
+
+        // Fallback lama (berbasis kata kunci) - hanya dipakai bila deteksi posisi
+        // kolom gagal (mis. file terlalu sedikit baris untuk dianalisis, atau
+        // PDF hasil scan yang tidak punya koordinat teks yang konsisten).
+        function extractNamaAndAlamatFallback(rawString) {
             if (!rawString) return { nama: "NASABAH", alamat: "-" };
             let text = rawString.replace(/^[\d\s\.-]+/, '').trim();
 
@@ -390,19 +473,7 @@
                 "\\bKEL\\.?\\b", "\\bKELURAHAN\\b", "\\bKEC\\.?\\b", "\\bKECAMATAN\\b",
                 "\\bJL\\.?\\b", "\\bJLN\\.?\\b", "\\bJALAN\\b", "\\bGANG\\b", "\\bGG\\.?\\b",
                 "\\bKP\\.?\\b", "\\bKAMPUNG\\b", "\\bBLOK\\b", "\\bNO\\.?\\b",
-                "\\b\\d{1,3}\\/\\d{1,3}\\b",
-                "\\bTLOGOTUWUNG\\b", "\\bGEJEG\\b", "\\bJOMBLANG\\b", "\\bKEDUNGBANTENG\\b",
-                "\\bGUWARAN\\b", "\\bBEKUTUK\\b", "\\bTEMULUS\\b", "\\bSELOGENDER\\b",
-                "\\bKARANGTENGAH\\b", "\\bSAMBONGMACAN\\b", "\\bRANDUBLATUNG\\b",
-                "\\bNGADIROJO\\b", "\\bJAGONG\\b", "\\bSAMBONGWANGAN\\b", "\\bNGLIRON\\b",
-                "\\bTANJUNG\\b", "\\bKDUNGTALANG\\b", "\\bPLOSO\\b", "\\bWULUNG\\b",
-                "\\bBUNGAS\\b", "\\bSULURSA\\b", "\\bKARANG\\b", "\\bKEPOH\\b",
-                "\\bBULAKAN\\b", "\\bBERAN\\b", "\\bDOPLANG\\b", "\\bKEDIREN\\b",
-                "\\bPUNTUK\\b", "\\bPILANG\\b", "\\bBALONGKARE\\b", "\\bSUKOREJO\\b",
-                "\\bGEMBYUNGAN\\b", "\\bKAYEN\\b", "\\bKEDUNGTUBAN\\b", "\\bPULO\\b",
-                "\\bHUTABARA\\b", "\\bFABRUR\\b",
-                "\\bBODEH\\b", "\\bWONOREJO\\b", "\\bSENDANGAGUNG\\b", "\\bKALEN\\b",
-                "\\bWATUONDO\\b", "\\bSAMBIROTO\\b", "\\bPELEM\\b"
+                "\\b\\d{1,3}\\/\\d{1,3}\\b"
             ];
 
             const regexPattern = new RegExp(addressKeywords.join("|"), "i");
@@ -417,21 +488,6 @@
                 };
             }
 
-            // Fallback: nama dusun/desa yang tidak ada di daftar keyword di atas.
-            // Pola umum di sumber data: "<NAMA> <KATA_DUSUN> <RT/RW>" atau "<NAMA> <RT/RW>"
-            // Cari 1 kata terakhir + pola RT/RW di akhir teks, anggap itu alamat.
-            const trailingWordMatch = text.match(/\s([A-Z]{3,})\s+(\d{1,3}\/\d{1,3})\s*$/);
-            if (trailingWordMatch) {
-                const idx = text.length - trailingWordMatch[0].length;
-                const namaPart = text.substring(0, idx).replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
-                const alamatPart = text.substring(idx).trim();
-                return {
-                    nama: namaPart || "NASABAH",
-                    alamat: alamatPart || "-"
-                };
-            }
-
-            // Fallback kedua: hanya pola RT/RW di akhir tanpa kata dusun sebelumnya.
             const trailingNumberOnly = text.match(/\s(\d{1,3}\/\d{1,3})\s*$/);
             if (trailingNumberOnly) {
                 const idx = text.length - trailingNumberOnly[0].length;
@@ -478,9 +534,15 @@
         }
 
         function parsePDFLines(lines) {
+            // Langkah 1: deteksi otomatis batas kolom Alamat untuk file PDF ini.
+            const alamatColX = detectAlamatColumnX(lines);
+
             let pendingNasabah = [];
 
-            lines.forEach(line => {
+            lines.forEach(lineObj => {
+                const line = lineObj.text;
+                const items = lineObj.items;
+
                 if (line.includes(":") || line.match(/^\d{2}-\d{4}/)) return;
 
                 const subtotalMatch = line.match(/^\d+\s+(\d{2,3})\s+([A-Z\s\.]+)\s+([\d\.,]+)\s+([\d\.,]+)/);
@@ -489,7 +551,7 @@
                 if (subtotalMatch) {
                     const rawCode = subtotalMatch[1];
                     const currentMktCode = rawCode.padStart(3, '0');
-                    const parsedHeader = extractNamaAndAlamat(subtotalMatch[2]);
+                    const parsedHeader = extractNamaAndAlamatFallback(subtotalMatch[2]);
 
                     pendingNasabah.forEach(nasabah => {
                         nasabah.mktCode = currentMktCode;
@@ -540,12 +602,26 @@
                         if (singleKolMatch) kol = singleKolMatch[1];
                     }
 
-                    let afterRek = line.substring(line.indexOf(noRek) + noRek.length).trim();
-                    if (dateMatches && dateMatches.length > 0) {
-                        afterRek = afterRek.split(dateMatches[0])[0].trim();
-                    }
+                    // --- Ekstraksi Nama & Alamat berbasis posisi kolom X ---
+                    const rekIdx = items.findIndex(it => it.text.trim() === noRek);
+                    const dateIdx = items.findIndex((it, idx) => rekIdx !== -1 && idx > rekIdx && /^\d{2}-\d{2}-\d{4}$/.test(it.text.trim()));
 
-                    const { nama, alamat } = extractNamaAndAlamat(afterRek);
+                    let nama, alamat;
+                    if (rekIdx !== -1 && dateIdx !== -1 && dateIdx > rekIdx + 1) {
+                        const zoneItems = items.slice(rekIdx + 1, dateIdx);
+                        const split = splitNamaAlamatByPosition(zoneItems, alamatColX);
+                        nama = split.nama;
+                        alamat = split.alamat;
+                    } else {
+                        // Fallback ke metode string lama bila item/posisi tidak ditemukan
+                        let afterRek = line.substring(line.indexOf(noRek) + noRek.length).trim();
+                        if (dateMatches && dateMatches.length > 0) {
+                            afterRek = afterRek.split(dateMatches[0])[0].trim();
+                        }
+                        const split = extractNamaAndAlamatFallback(afterRek);
+                        nama = split.nama;
+                        alamat = split.alamat;
+                    }
 
                     const nasabahRow = {
                         uid: uidCounter++,
