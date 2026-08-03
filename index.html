@@ -97,6 +97,10 @@
             border-top: 2px solid var(--mdr-gold-600);
             border-bottom: 2px solid var(--mdr-gold-600);
         }
+        tbody tr.row-selected{
+            outline: 2px solid #B3261E;
+            outline-offset: -2px;
+        }
 
         .kol-badge{
             display:inline-flex; align-items:center; justify-content:center;
@@ -194,6 +198,11 @@
                         <input type="file" id="fileInput" accept="application/pdf" multiple class="hidden">
                     </label>
 
+                    <button id="deleteSelectedBtn" onclick="deleteSelectedRows()" class="hidden flex items-center justify-center px-3 py-2.5 btn-danger-soft font-semibold text-xs rounded-full transition">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9.5 4h5a1 1 0 011 1v2h-7V5a1 1 0 011-1z"></path></svg>
+                        Hapus Terpilih
+                    </button>
+
                     <button id="resetBtn" onclick="resetAllData()" class="hidden flex items-center justify-center px-3 py-2.5 btn-danger-soft font-semibold text-xs rounded-full transition">
                         Reset
                     </button>
@@ -222,6 +231,7 @@
                 <div class="flex items-center gap-2">
                     <h2 class="font-bold text-xs text-[var(--mdr-navy-800)] uppercase tracking-wider">Hasil Ekstraksi Data</h2>
                     <span id="rowCount" class="text-xs stat-pill px-2.5 py-1 rounded-full font-bold shadow-sm">0 Data</span>
+                    <span id="selectedCount" class="hidden text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-bold shadow-sm">0 dipilih</span>
                 </div>
 
                 <div class="filter-segment shadow-inner">
@@ -240,6 +250,9 @@
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="uppercase sticky top-0 shadow-sm">
                         <tr>
+                            <th class="p-2.5 text-center w-8">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="w-3.5 h-3.5 cursor-pointer align-middle">
+                            </th>
                             <th class="p-2.5 text-center">No.</th>
                             <th class="p-2.5">Nomor</th>
                             <th class="p-2.5">N a m a</th>
@@ -271,6 +284,7 @@
         let loadedFiles = [];
         let activeViewData = [];
         let parsedBasilMap = [];
+        let uidCounter = 1;
 
         document.getElementById('fileInput').addEventListener('change', handleFiles);
 
@@ -456,6 +470,7 @@
                     pendingNasabah = [];
 
                     parsedData.push({
+                        uid: uidCounter++,
                         noRek: currentMktCode,
                         mktCode: currentMktCode,
                         nama: `${currentMktCode} ${parsedHeader.nama}`,
@@ -505,6 +520,7 @@
                     const { nama, alamat } = extractNamaAndAlamat(afterRek);
 
                     const nasabahRow = {
+                        uid: uidCounter++,
                         noRek: noRek,
                         mktCode: "999",
                         nama: nama,
@@ -568,6 +584,7 @@
                     let namaMktDisplay = subInfo ? subInfo.nama : `${mkt} MARKETING`;
 
                     processedResult.push({
+                        uid: `sub-${mkt}`,
                         noRek: mkt,
                         mktCode: mkt,
                         nama: namaMktDisplay,
@@ -620,16 +637,28 @@
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
-            data.forEach((row, idx) => {
+            let counter = 0;
+
+            data.forEach((row) => {
                 const tr = document.createElement('tr');
+
+                let rowNumberDisplay = '';
                 if (row.isSubtotal) {
                     tr.className = 'row-subtotal font-bold text-amber-950';
+                    counter = 0; // reset penomoran setelah baris kode marketing
                 } else {
-                    tr.className = idx % 2 === 0 ? 'row-even' : 'row-odd';
+                    counter++;
+                    rowNumberDisplay = counter;
+                    tr.className = counter % 2 === 0 ? 'row-odd' : 'row-even';
                 }
 
+                const checkboxCell = row.isSubtotal
+                    ? ''
+                    : `<input type="checkbox" class="row-checkbox w-3.5 h-3.5 cursor-pointer" data-uid="${row.uid}" onchange="onRowCheckboxChange()">`;
+
                 tr.innerHTML = `
-                    <td class="p-2.5 text-center font-medium ${row.isSubtotal ? 'text-amber-900' : 'text-slate-500'}">${idx + 1}</td>
+                    <td class="p-2.5 text-center">${checkboxCell}</td>
+                    <td class="p-2.5 text-center font-medium ${row.isSubtotal ? 'text-amber-900' : 'text-slate-500'}">${rowNumberDisplay}</td>
                     <td class="p-2.5 font-mono whitespace-nowrap text-[var(--mdr-navy-800)]">${row.noRek}</td>
                     <td class="p-2.5 font-bold">${row.nama}</td>
                     <td class="p-2.5 ${row.isSubtotal ? 'text-amber-900' : 'text-slate-600'}">${row.alamat}</td>
@@ -642,10 +671,55 @@
                 tbody.appendChild(tr);
             });
 
-            document.getElementById('rowCount').innerText = `${data.length} Baris Tampil`;
+            document.getElementById('rowCount').innerText = `${data.filter(r => !r.isSubtotal).length} Data`;
             document.getElementById('resultContainer').classList.remove('hidden');
             document.getElementById('exportCsvBtn').classList.remove('hidden');
             document.getElementById('exportXlsxBtn').classList.remove('hidden');
+            document.getElementById('deleteSelectedBtn').classList.remove('hidden');
+
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            if (selectAllCb) selectAllCb.checked = false;
+            onRowCheckboxChange();
+        }
+
+        function onRowCheckboxChange() {
+            const checked = document.querySelectorAll('.row-checkbox:checked');
+            const badge = document.getElementById('selectedCount');
+            if (checked.length > 0) {
+                badge.innerText = `${checked.length} dipilih`;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            document.querySelectorAll('.row-checkbox').forEach(cb => {
+                const tr = cb.closest('tr');
+                if (tr) tr.classList.toggle('row-selected', cb.checked);
+            });
+        }
+
+        function toggleSelectAll(checkbox) {
+            document.querySelectorAll('.row-checkbox').forEach(cb => {
+                cb.checked = checkbox.checked;
+            });
+            onRowCheckboxChange();
+        }
+
+        function deleteSelectedRows() {
+            const checked = document.querySelectorAll('.row-checkbox:checked');
+            if (checked.length === 0) {
+                alert('Pilih minimal satu baris nama untuk dihapus terlebih dahulu.');
+                return;
+            }
+
+            if (!confirm(`Hapus ${checked.length} data yang dipilih? Data yang dihapus tidak akan ikut terdownload.`)) {
+                return;
+            }
+
+            const uidsToDelete = new Set(Array.from(checked).map(cb => cb.dataset.uid));
+            parsedData = parsedData.filter(row => !uidsToDelete.has(String(row.uid)));
+
+            toggleViewMode();
         }
 
         function resetAllData() {
@@ -653,10 +727,12 @@
             loadedFiles = [];
             activeViewData = [];
             parsedBasilMap = [];
+            uidCounter = 1;
             document.getElementById('fileInput').value = '';
             document.getElementById('resultContainer').classList.add('hidden');
             document.getElementById('exportCsvBtn').classList.add('hidden');
             document.getElementById('exportXlsxBtn').classList.add('hidden');
+            document.getElementById('deleteSelectedBtn').classList.add('hidden');
             updateFileListUI();
         }
 
