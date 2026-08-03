@@ -400,7 +400,9 @@
                 "\\bBULAKAN\\b", "\\bBERAN\\b", "\\bDOPLANG\\b", "\\bKEDIREN\\b",
                 "\\bPUNTUK\\b", "\\bPILANG\\b", "\\bBALONGKARE\\b", "\\bSUKOREJO\\b",
                 "\\bGEMBYUNGAN\\b", "\\bKAYEN\\b", "\\bKEDUNGTUBAN\\b", "\\bPULO\\b",
-                "\\bHUTABARA\\b", "\\bFABRUR\\b"
+                "\\bHUTABARA\\b", "\\bFABRUR\\b",
+                "\\bBODEH\\b", "\\bWONOREJO\\b", "\\bSENDANGAGUNG\\b", "\\bKALEN\\b",
+                "\\bWATUONDO\\b", "\\bSAMBIROTO\\b", "\\bPELEM\\b"
             ];
 
             const regexPattern = new RegExp(addressKeywords.join("|"), "i");
@@ -409,6 +411,32 @@
             if (matchIndex !== -1) {
                 const namaPart = text.substring(0, matchIndex).replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
                 const alamatPart = text.substring(matchIndex).trim();
+                return {
+                    nama: namaPart || "NASABAH",
+                    alamat: alamatPart || "-"
+                };
+            }
+
+            // Fallback: nama dusun/desa yang tidak ada di daftar keyword di atas.
+            // Pola umum di sumber data: "<NAMA> <KATA_DUSUN> <RT/RW>" atau "<NAMA> <RT/RW>"
+            // Cari 1 kata terakhir + pola RT/RW di akhir teks, anggap itu alamat.
+            const trailingWordMatch = text.match(/\s([A-Z]{3,})\s+(\d{1,3}\/\d{1,3})\s*$/);
+            if (trailingWordMatch) {
+                const idx = text.length - trailingWordMatch[0].length;
+                const namaPart = text.substring(0, idx).replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
+                const alamatPart = text.substring(idx).trim();
+                return {
+                    nama: namaPart || "NASABAH",
+                    alamat: alamatPart || "-"
+                };
+            }
+
+            // Fallback kedua: hanya pola RT/RW di akhir tanpa kata dusun sebelumnya.
+            const trailingNumberOnly = text.match(/\s(\d{1,3}\/\d{1,3})\s*$/);
+            if (trailingNumberOnly) {
+                const idx = text.length - trailingNumberOnly[0].length;
+                const namaPart = text.substring(0, idx).replace(/[\,\.\-\/\:\;\s]+$/, '').trim();
+                const alamatPart = text.substring(idx).trim();
                 return {
                     nama: namaPart || "NASABAH",
                     alamat: alamatPart || "-"
